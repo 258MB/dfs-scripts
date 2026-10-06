@@ -829,17 +829,22 @@
         });
       }, { threshold: 0 });
 
-      // Set duration from width + per-marquee speed, then observe
+      // Set duration from width + per-marquee speed, then observe.
+      // Measure every list first and only then write styles, so the browser
+      // lays out the page once instead of once per list.
+      const lists = [];
       marquees.forEach(marquee => {
         const pixelsPerSecond =
           parseFloat(marquee.getAttribute('data-css-marquee-speed')) || defaultSpeed;
-
         marquee.querySelectorAll('[data-css-marquee-list]').forEach(list => {
-          list.style.animationDuration = (list.offsetWidth / pixelsPerSecond) + 's';
-          list.style.animationPlayState = 'paused';
+          lists.push([list, list.offsetWidth / pixelsPerSecond]);
         });
-        observer.observe(marquee);
       });
+      lists.forEach(([list, seconds]) => {
+        list.style.animationDuration = seconds + 's';
+        list.style.animationPlayState = 'paused';
+      });
+      marquees.forEach(marquee => observer.observe(marquee));
     }
     initCSSMarquee();
 
@@ -1546,6 +1551,7 @@
       { id: "lesson-4.2", complete: false },
       { id: "lesson-4.3", complete: false },
       { id: "lesson-4.4", complete: false },
+      { id: "lesson-4.5", complete: false }, // bonus: Browser Alternatives
       { id: "lesson-5.1", complete: false },
       { id: "lesson-5.2", complete: false },
       { id: "lesson-5.3", complete: false },

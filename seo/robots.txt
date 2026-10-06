@@ -1,0 +1,23 @@
+# Digital Feng Shui — robots.txt
+# Paste into Webflow: Site settings → SEO → robots.txt
+#
+# Everything may be crawled. Member pages are kept out of Google with a
+# <meta name="robots" content="noindex"> tag on each page instead of a
+# Disallow here: a Disallow would stop Google from ever seeing that tag.
+
+User-agent: *
+Allow: /
+
+# AI search and assistant crawlers — explicitly welcome, so the course
+# can be found and recommended in ChatGPT, Claude, Perplexity and Gemini
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://www.digital-fengshui.com/sitemap.xml
