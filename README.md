@@ -5,6 +5,9 @@ Site-wide JavaScript for the Digital Feng Shui website (Webflow), migrated from 
 - `main.js` — everything in one file. Each former Slater script is its own
   section (`dfsGlobal`, `dfsHome`, `dfsCourse`, …); the router at the bottom
   decides which sections run on which page.
+- `styles.css` — the hand-written CSS (Client-First base, Osmo components,
+  forms, homepage blocks) that used to sit in Webflow code embeds. Loaded in
+  Site settings → Head as `@vX.Y.Z/styles.min.css`.
 - `archive/` — old/unused snippets kept for reuse. Not loaded on the site.
 - Served via jsDelivr, pinned to a git tag, as one tag in Webflow
   Site settings → Custom code → Footer (no `defer`):

@@ -1,0 +1,483 @@
+/* =========================================================
+   Digital Feng Shui — site CSS
+   Loaded once, site-wide, from Site settings → Head:
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/styles.min.css">
+   jsDelivr builds styles.min.css from this file automatically.
+
+   Webflow's own Designer styles stay in Webflow. This file holds the
+   hand-written CSS that used to live in code embeds.
+   ========================================================= */
+
+/* =========================================================
+   CLIENT-FIRST BASE — global helpers (was Global Styles › style-overrides)
+   ========================================================= */
+
+/* Ensure all elements inherit the color from its parent */
+a,
+.w-input,
+.w-select,
+.w-tab-link,
+.w-nav-link,
+.w-nav-brand,
+.w-dropdown-btn,
+.w-dropdown-toggle,
+.w-slider-arrow-left,
+.w-slider-arrow-right,
+.w-dropdown-link {
+  color: inherit;
+  text-decoration: inherit;
+  font-size: inherit;
+}
+
+/* Focus state style for keyboard navigation for the focusable elements */
+*[tabindex]:focus-visible,
+  input[type="file"]:focus-visible {
+   outline: 0.125rem solid #4d65ff;
+   outline-offset: 0.125rem;
+}
+
+/* Get rid of top margin on first element in any rich text element */
+.w-richtext > :not(div):first-child, .w-richtext > div:first-child > :first-child {
+  margin-top: 0 !important;
+}
+
+/* Get rid of bottom margin on last element in any rich text element */
+.w-richtext>:last-child, .w-richtext ol li:last-child, .w-richtext ul li:last-child {
+	margin-bottom: 0 !important;
+}
+
+/* Prevent all click and hover interaction with an element */
+.pointer-events-off {
+	pointer-events: none;
+}
+
+/* Enables all click and hover interaction with an element */
+.pointer-events-on {
+  pointer-events: auto;
+}
+
+/* Create a class of .div-square which maintains a 1:1 dimension of a div */
+.div-square::after {
+	content: "";
+	display: block;
+	padding-bottom: 100%;
+}
+
+/* Make sure containers never lose their center alignment */
+.container-medium,.container-small, .container-large {
+	margin-right: auto !important;
+  margin-left: auto !important;
+}
+
+
+/* Apply "..." after 3 lines of text */
+.text-style-3lines {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+}
+
+/* Apply "..." after 2 lines of text */
+.text-style-2lines {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+/* Adds inline flex display */
+.display-inlineflex {
+  display: inline-flex;
+}
+
+/* These classes are never overwritten */
+.hide {
+  display: none !important;
+}
+
+/* Remove default Webflow chevron from form select */
+select{
+  -webkit-appearance:none;
+}
+
+
+@media screen and (max-width: 991px) {
+    .hide, .hide-tablet {
+        display: none !important;
+    }
+}
+  @media screen and (max-width: 767px) {
+    .hide-mobile-landscape{
+      display: none !important;
+    }
+}
+  @media screen and (max-width: 479px) {
+    .hide-mobile{
+      display: none !important;
+    }
+}
+ 
+.margin-0 {
+  margin: 0rem !important;
+}
+  
+.padding-0 {
+  padding: 0rem !important;
+}
+
+.spacing-clean {
+padding: 0rem !important;
+margin: 0rem !important;
+}
+
+.margin-top {
+  margin-right: 0rem !important;
+  margin-bottom: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-top {
+  padding-right: 0rem !important;
+  padding-bottom: 0rem !important;
+  padding-left: 0rem !important;
+}
+  
+.margin-right {
+  margin-top: 0rem !important;
+  margin-bottom: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-right {
+  padding-top: 0rem !important;
+  padding-bottom: 0rem !important;
+  padding-left: 0rem !important;
+}
+
+.margin-bottom {
+  margin-top: 0rem !important;
+  margin-right: 0rem !important;
+  margin-left: 0rem !important;
+}
+
+.padding-bottom {
+  padding-top: 0rem !important;
+  padding-right: 0rem !important;
+  padding-left: 0rem !important;
+}
+
+.margin-left {
+  margin-top: 0rem !important;
+  margin-right: 0rem !important;
+  margin-bottom: 0rem !important;
+}
+  
+.padding-left {
+  padding-top: 0rem !important;
+  padding-right: 0rem !important;
+  padding-bottom: 0rem !important;
+}
+  
+.margin-horizontal {
+  margin-top: 0rem !important;
+  margin-bottom: 0rem !important;
+}
+
+.padding-horizontal {
+  padding-top: 0rem !important;
+  padding-bottom: 0rem !important;
+}
+
+.margin-vertical {
+  margin-right: 0rem !important;
+  margin-left: 0rem !important;
+}
+  
+.padding-vertical {
+  padding-right: 0rem !important;
+  padding-left: 0rem !important;
+}
+
+/* Apply "..." at 100% width */
+.truncate-width { 
+		width: 100%; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+/* Removes native scrollbar */
+.no-scrollbar {
+    -ms-overflow-style: none;
+    overflow: -moz-scrollbars-none; 
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* =========================================================
+   BUTTONS — Osmo animated buttons (was Global Styles › embed 2)
+   ========================================================= */
+
+/* Characters */
+.btn-animate-chars [data-button-animate-chars] {
+  overflow: hidden;
+  position: relative;
+  display: inline-block;
+}
+
+.btn-animate-chars [data-button-animate-chars] span {
+  display: inline-block;
+  position: relative;
+  text-shadow: 0px 1.3em currentColor;
+  transform: translateY(0em) rotate(0.001deg);
+  transition: transform 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+.btn-animate-chars:hover [data-button-animate-chars] span {
+  transform: translateY(-1.3em) rotate(0.001deg);
+}
+
+/* Background */
+.btn-animate-chars__bg {
+  inset: 0;
+  transition: inset 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+.btn-animate-chars:hover .btn-animate-chars__bg {
+  inset: 0.125em;
+}
+
+
+
+/* arrow btn */
+/* arrow btn */
+/* arrow btn */
+/* arrow btn */
+
+/* Global attribute to easily control easing and timing of all targetted elements */
+[data-button-anim-target]{
+  transition: transform 0.525s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+/* Fake a duplicate text element using text shadow without blur  */
+/* We save the distance in a variable for easy use in the CSS animation */
+.btn-icon-content__text{
+  --text-duplicate-distance: 1.5em;
+  text-shadow: 0px var(--text-duplicate-distance) currentColor;
+}
+
+/* Only apply hover animations if they are actually not supported */
+@media (hover:hover) and (pointer:fine){
+
+  .btn-icon-link:hover .btn-icon-content__text{ transform: translate(0px, calc(-1 * var(--text-duplicate-distance))); }
+	
+  .btn-icon-link:hover .btn-icon-icon__bg{ transform: rotate(90deg); }
+  
+  .btn-icon-link:hover .btn-icon-icon__arrow{ transform: translate(200%, 0px); }
+  
+  .btn-icon-link:hover .btn-icon-content__bg{ transform: translate(0px, 0%) rotate(0deg); }
+  
+}
+
+/* =========================================================
+   FAQ, MARQUEE & GRID — Osmo components + misc (was Global Styles › css_miscc)
+   ========================================================= */
+
+/* FAQ */
+/* FAQ */
+/* FAQ */
+
+/* Animate Accordion Bottom Grid */
+.accordion-css__item-bottom {
+  transition: grid-template-rows 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+[data-accordion-status="active"] .accordion-css__item-bottom {
+  grid-template-rows: 1fr;
+}
+
+/* Animate Icon */
+.accordion-css__item-icon {
+  transition: transform 0.6s cubic-bezier(0.625, 0.05, 0, 1);
+}
+
+[data-accordion-status="active"] .accordion-css__item-icon {
+  transform: rotate(0.001deg);
+}
+
+/* CSS Marquee */
+/* CSS Marquee */
+/* CSS Marquee */
+
+/* CSS Keyframe Animation */
+@keyframes translateX { 
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+[data-css-marquee-list] {
+  animation: translateX 45s linear;
+  animation-iteration-count: infinite;
+  animation-play-state: paused;
+}
+
+[data-directional-hover-tile] {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(-100%);
+  will-change: transform;
+}
+
+  /* Flip direction for any marquee marked as "right" */
+[data-css-marquee-direction="right"] [data-css-marquee-list] {
+  animation-direction: reverse;
+}
+  
+
+/* Other */
+/* Other */
+/* Other */
+
+.grid-background {
+  background-image:
+    repeating-linear-gradient(to right, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2rem),
+    repeating-linear-gradient(to bottom, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2rem);
+  background-size: 4rem 4rem;
+}
+
+::selection {
+  /* Background color */ 
+  background-color: #0297DB; 
+  /* Text color */ 
+  color: #FBF7EE;  
+}
+
+.lines-js {
+	overflow: hidden;
+}
+
+.char-js {
+	will-change: transform;
+}
+
+/* =========================================================
+   FORMS — validation states, radio/checkbox boxes, autofill (was Global Styles › css_form)
+   ========================================================= */
+
+[data-validate].is--error .radiocheck-group.is--boxed {
+  border-color: #FF4C24;
+}
+  
+.radiocheck-field.is-boxed {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.radiocheck-field.is-boxed input[type="checkbox"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.radiocheck-field.is-boxed:has(input:checked) {
+  background-color: #0297DB;
+  border-color: #0297DB;
+}
+
+.radiocheck-field.is-boxed:has(input:checked) .radiocheck-label.is-boxed {
+  color: #FFFFFF;
+}
+  
+  
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #eff9fd inset;
+  -webkit-text-fill-color: #1E1E1E;
+  caret-color: #1E1E1E;
+}
+
+/* Field: Error */
+[data-validate].is--error input,
+[data-validate].is--error textarea,
+[data-validate].is--error select{
+  border-color: #FF4C24;
+}
+
+[data-validate].is--error .form-field-icon.is--error,
+[data-validate].is--error .radiocheck-field-icon.is--error{
+  opacity: 1;
+}
+
+/* Field: Success */
+[data-validate].is--success .form-field-icon.is--success,
+[data-validate].is--success .radiocheck-field-icon.is--success{
+  opacity: 1;
+}
+
+/* Field: Custom Radio or Checkbox */
+[data-form-validate] .radiocheck-field input:focus-visible ~ .radiocheck-custom {
+  background-color: #D0CFCD;
+  color: #E2E1DF;
+}
+
+[data-form-validate] .radiocheck-field input:focus-visible:checked ~ .radiocheck-custom,
+[data-form-validate] .radiocheck-field input:checked ~ .radiocheck-custom {
+  background-color: #131313;
+  color: #EFEEEC;
+}
+
+[data-form-validate] .radiocheck-field .radiocheck-label.is--small {
+  margin-top: 0.125em;
+}
+
+[data-validate].is--error .radiocheck-custom {
+  border-color: #FF4C24; 
+}
+
+[data-validate].is--error input:checked ~ .radiocheck-custom {
+  border-color: #131313; 
+}
+
+/* Field: Select */
+[data-form-validate] select:has(option[value=""]:checked) {
+  color: rgba(19, 19, 19, 0.3);
+}
+
+/* =========================================================
+   HOMEPAGE — tetris block animation [data-dfs-blocks] (was homepage › Code Embed)
+   ========================================================= */
+
+[data-dfs-blocks]{
+  position: relative;
+  overflow: visible;
+  --blk-tone: #B9AF9B;
+  --blk-radius: 6px;
+  --blk-gap: 3px;
+  --blk-shadow: 0 3px 5px rgba(0,0,0,.16);
+}
+[data-dfs-blocks] .dfs-blk-layer{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+[data-dfs-blocks] .dfs-blk-piece{
+  position: absolute;
+  will-change: transform;
+}
+[data-dfs-blocks] .dfs-blk-cell{
+  position: absolute;
+  border-radius: var(--blk-radius);
+}
