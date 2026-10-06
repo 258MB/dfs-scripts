@@ -1,0 +1,4036 @@
+/* =========================================================
+   Digital Feng Shui — site JavaScript
+   Loaded once, site-wide, from Site settings → Footer:
+   <script src="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/main.js"></script>
+   (no defer — see "Run" at the bottom for timing)
+
+   Each section below is one former Slater script, wrapped in its own
+   function so names can't clash. The router at the bottom decides
+   which sections run on which page.
+   ========================================================= */
+
+(function () {
+
+  // =========================================================
+  // GLOBAL — every page
+  // (was Slater GLOBAL.js)
+  // =========================================================
+  function dfsGlobal() {
+    // timer
+    // timer
+    // timer
+    // timer
+
+    // single interval timer (updates all [data-timer] elements)
+    (function () {
+      const deadline = '2026/10/15 00:00';
+      const elTimers = Array.from(document.querySelectorAll('[data-timer]'));
+
+      function pad(num, size = 2) {
+        let s = "0" + Math.abs(num);
+        return s.substr(s.length - size);
+      }
+
+      function parseDate(date) {
+        const parsed = Date.parse(date);
+        if (!isNaN(parsed)) return parsed;
+        return Date.parse(date.replace(/-/g, '/').replace(/[a-z]+/gi, ' '));
+      }
+
+      function getTimeRemaining(endtimeMs) {
+        const total = endtimeMs - Date.now();
+        const seconds = Math.floor((total / 1000) % 60);
+        const minutes = Math.floor((total / 1000 / 60) % 60);
+        const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+        const days = Math.floor(total / (1000 * 60 * 60 * 24));
+        return { total, days, hours, minutes, seconds };
+      }
+
+      const endMs = parseDate(deadline);
+      if (elTimers.length === 0) return;
+
+      // cache nodes to avoid querying every tick
+      const cached = elTimers.map(el => ({
+        el,
+        days: el.querySelector('[data-days]'),
+        hours: el.querySelector('[data-hours]'),
+        minutes: el.querySelector('[data-minutes]'),
+        seconds: el.querySelector('[data-seconds]')
+      }));
+
+      const tick = () => {
+        const t = getTimeRemaining(endMs);
+        if (t.total <= 0) {
+          cached.forEach(c => {
+            if (c.days) c.days.textContent = '00';
+            if (c.hours) c.hours.textContent = '00';
+            if (c.minutes) c.minutes.textContent = '00';
+            if (c.seconds) c.seconds.textContent = '00';
+          });
+          clearInterval(intervalId);
+          return;
+        }
+        cached.forEach(c => {
+          if (c.days) c.days.textContent = pad(t.days);
+          if (c.hours) c.hours.textContent = pad(t.hours);
+          if (c.minutes) c.minutes.textContent = pad(t.minutes);
+          if (c.seconds) c.seconds.textContent = pad(t.seconds);
+        });
+      };
+
+      tick(); // initial render
+      const intervalId = setInterval(tick, 1000);
+    })();
+
+    // //testing osmo text
+    // //testing osmo text\
+    // //testing osmo text
+    const splitConfig = {
+      lines: { duration: 0.8, stagger: 0.08 },
+      words: { duration: 0.6, stagger: 0.06 },
+      chars: { duration: 0.4, stagger: 0.01 }
+    }
+
+    async function initMaskTextScrollReveal() {
+      document.querySelectorAll('[data-split="heading"]').forEach(heading => {
+        // Find the split type, the default is 'lines'
+        const type = heading.dataset.splitReveal || 'lines'
+        const typesToSplit =
+          type === 'lines' ? ['lines'] :
+          type === 'words' ? ['lines', 'words'] : ['lines', 'words', 'chars']
+
+        const offset = parseFloat(heading.dataset.splitDelay) || 0
+        const startPct = 80 - (offset * 25)
+
+        // Split the text
+        SplitText.create(heading, {
+          type: typesToSplit.join(', '), // split into required elements
+          mask: 'lines', // wrap each line in an overflow:hidden div
+          autoSplit: true,
+          linesClass: 'line',
+          wordsClass: 'word',
+          charsClass: 'letter',
+          onSplit: function (instance) {
+            const targets = instance[type] // Register animation targets
+            const config = splitConfig[
+              type] // Find matching duration and stagger from our splitConfig
+            return gsap.from(targets, {
+              yPercent: 110,
+              duration: config.duration,
+              stagger: config.stagger,
+              ease: 'expo.out',
+              scrollTrigger: {
+                trigger: heading,
+                start: `clamp(top ${startPct}%)`,
+                scrub: true
+                // once: true
+              }
+            });
+          }
+        })
+      })
+    }
+    initMaskTextScrollReveal()
+
+    //360
+
+    document.querySelectorAll("[rotate360], [rotate360_F]").forEach(el => {
+      const duration = parseFloat(el.getAttribute("rotate360")) || 12;
+      const forward = !el.hasAttribute("rotate360_F");
+      gsap.to(el, {
+        rotation: forward ? 360 : -360,
+        repeat: -1,
+        ease: "none",
+        duration,
+        transformOrigin: "center center"
+      });
+    });
+
+    //logo movement
+
+    let angle = 0;
+    setInterval(() => {
+      angle += 45;
+      gsap.to("#LOGO_ICON, #LOGO_ICON_2", {
+        rotation: angle,
+        duration: 0.6,
+        ease: "ease",
+        transformOrigin: "center center",
+      });
+    }, 4400);
+
+    //paralax
+    //paralax
+    //paralax
+    //paralax
+    //paralax
+    //paralax
+
+    function initGlobalParallax() {
+      const mm = gsap.matchMedia()
+
+      mm.add(
+        {
+          isMobile: "(max-width:479px)",
+          isMobileLandscape: "(max-width:767px)",
+          isTablet: "(max-width:991px)",
+          isDesktop: "(min-width:992px)"
+        },
+        (context) => {
+          const { isMobile, isMobileLandscape, isTablet } = context.conditions
+
+          const ctx = gsap.context(() => {
+            document.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
+              // Check if this trigger has to be disabled on smaller breakpoints
+              const disable = trigger.getAttribute("data-parallax-disable")
+              if (
+                (disable === "mobile" && isMobile) ||
+                (disable === "mobileLandscape" && isMobileLandscape) ||
+                (disable === "tablet" && isTablet)
+              ) {
+                return
+              }
+
+              // Optional: you can target an element inside a trigger if necessary
+              const target = trigger.querySelector('[data-parallax="target"]') || trigger
+
+              // Get the direction value to decide between xPercent or yPercent tween
+              const direction = trigger.getAttribute("data-parallax-direction") || "vertical"
+              const prop = direction === "horizontal" ? "xPercent" : "yPercent"
+
+              // Get the scrub value, our default is 'true' because that feels nice with Lenis
+              const scrubAttr = trigger.getAttribute("data-parallax-scrub")
+              const scrub = scrubAttr ? parseFloat(scrubAttr) : true
+
+              // Get the start position in %
+              const startAttr = trigger.getAttribute("data-parallax-start")
+              const startVal = startAttr !== null ? parseFloat(startAttr) : 20
+
+              // Get the end position in %
+              const endAttr = trigger.getAttribute("data-parallax-end")
+              const endVal = endAttr !== null ? parseFloat(endAttr) : -20
+
+              // Get the start value of the ScrollTrigger
+              const scrollStartRaw = trigger.getAttribute("data-parallax-scroll-start") ||
+                "top bottom"
+              const scrollStart = `clamp(${scrollStartRaw})`
+
+              // Get the end value of the ScrollTrigger
+              const scrollEndRaw = trigger.getAttribute("data-parallax-scroll-end") ||
+                "bottom top"
+              const scrollEnd = `clamp(${scrollEndRaw})`
+
+              gsap.fromTo(
+                target, {
+                  [prop]: startVal
+                },
+                {
+                  [prop]: endVal,
+                  ease: "none",
+                  scrollTrigger: {
+                    trigger,
+                    start: scrollStart,
+                    end: scrollEnd,
+                    scrub,
+                  },
+                }
+              )
+            })
+          })
+
+          return () => ctx.revert()
+        }
+      )
+    }
+    initGlobalParallax()
+
+    // button
+
+    function initButtonCharacterStagger() {
+      const offsetIncrement = 0.01; // Transition offset increment in seconds
+      const buttons = document.querySelectorAll('[data-button-animate-chars]');
+
+      buttons.forEach(button => {
+        const text = button.textContent; // Get the button's text content
+        button.innerHTML = ''; // Clear the original content
+
+        [...text].forEach((char, index) => {
+          const span = document.createElement('span');
+          span.textContent = char;
+          span.style.transitionDelay = `${index * offsetIncrement}s`;
+
+          // Handle spaces explicitly
+          if (char === ' ') {
+            span.style.whiteSpace = 'pre'; // Preserve space width
+          }
+
+          button.appendChild(span);
+        });
+      });
+    }
+
+    initButtonCharacterStagger();
+
+    gsap.to("#progress_bar", {
+      width: "85%",
+      ease: "none",
+      scrollTrigger: {
+        trigger: "body",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true
+      }
+    });
+
+    //FAQ
+    //FAQ
+
+    function initAccordionCSS() {
+      document.querySelectorAll('[data-accordion-css-init]').forEach((accordion) => {
+        const closeSiblings = accordion.getAttribute('data-accordion-close-siblings') === 'true';
+
+        accordion.addEventListener('click', (event) => {
+          const toggle = event.target.closest('[data-accordion-toggle]');
+          if (!toggle) return; // Exit if the clicked element is not a toggle
+
+          const singleAccordion = toggle.closest('[data-accordion-status]');
+          if (!singleAccordion) return; // Exit if no accordion container is found
+
+          const isActive = singleAccordion.getAttribute('data-accordion-status') === 'active';
+          singleAccordion.setAttribute('data-accordion-status', isActive ? 'not-active' :
+            'active');
+
+          // When [data-accordion-close-siblings="true"]
+          if (closeSiblings && !isActive) {
+            accordion.querySelectorAll('[data-accordion-status="active"]').forEach((
+              sibling) => {
+              if (sibling !== singleAccordion) sibling.setAttribute('data-accordion-status',
+                'not-active');
+            });
+          }
+        });
+      });
+    }
+
+    initAccordionCSS();
+  }
+
+  // =========================================================
+  // HOME — home + /course sales page
+  // (was Slater HOME.js)
+  // =========================================================
+  function dfsHome() {
+    /* =========================================================
+       Digital Feng Shui — homepage GSAP script (v7)
+       ---------------------------------------------------------
+       [data-logo-spin]: ONE full turn, then pause, repeating
+       every ~5s (not a continuous spin).
+       Two knobs:
+         duration    = how fast the single turn is
+         repeatDelay = how long it waits between turns
+       (duration 1 + repeatDelay 4 = one turn every 5s)
+
+       No float/bounce on any logo. Course Overview: single toArray.
+       Requires: gsap + ScrollTrigger registered before this runs.
+       ========================================================= */
+
+    // // --- logo spin (one turn every ~5s) -------------------------------
+    // gsap.utils.toArray('[data-logo-spin]').forEach(logo => {
+    //   gsap.to(logo, {
+    //     rotation: 360,
+    //     transformOrigin: "50% 50%",
+    //     duration: 1,
+    //     ease: "power1.inOut",
+    //     repeat: -1,
+    //     repeatDelay: 4
+    //   });
+    // });
+
+    // DFS — Get Started popup
+    (function () {
+      var popup = document.querySelector('[get-started], .get_started_container');
+      if (!popup || typeof gsap === 'undefined') return;
+
+      gsap.set(popup, { clearProps: 'transform' });
+      gsap.set(popup, { y: 0, yPercent: 100 });
+
+      var isOpen = false;
+
+      function open() {
+        if (isOpen) return;
+        isOpen = true;
+        gsap.to(popup, { y: 0, yPercent: 0, duration: 0.6, ease: 'power2.out', overwrite: 'auto' });
+      }
+
+      function close() {
+        if (!isOpen) return;
+        isOpen = false;
+        gsap.to(popup, { y: 0, yPercent: 100, duration: 0.6, ease: 'power2.in', overwrite: 'auto' });
+      }
+
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('[start-popup]')) {
+          e.preventDefault();
+          open();
+          return;
+        }
+        if (e.target.closest('[close_btn], .close_btn')) {
+          e.preventDefault();
+          close();
+        }
+      }, true);
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') close();
+      });
+
+      window.dfsPopup = { open: open, close: close };
+    })();
+
+    // DFS — submit to Webflow, then go to Stripe with the email prefilled
+    (function () {
+      var form = document.querySelector('.is-signup_xp');
+      if (!form) return;
+
+      // Stripe link per price-test group (set by the price test script in localStorage 'dfs_pg'),
+      // so the checkout shows the same price the page showed: a = $67, b = $47, c = $97
+      var STRIPE_URLS = {
+        a: 'https://buy.stripe.com/5kQbIUaGJ6JdcZE2BddjO01',
+        b: 'https://buy.stripe.com/14A7sE1694B50cSejVdjO02',
+        c: 'https://buy.stripe.com/bJe6oA5mpffJ4t8fnZdjO03'
+      };
+      // Abandoned-checkout reminders (Cloudflare worker dfs-cart)
+      var CART_URL = 'https://dfs-cart.thomas-aukema.workers.dev/start';
+
+      form.addEventListener('submit', function () {
+        var input = form.querySelector('input[type="email"]');
+        var email = input ? input.value.trim() : '';
+        if (!email) return;
+
+        var group = 'a';
+        try { group = localStorage.getItem('dfs_pg') || 'a'; } catch (e) {}
+        var stripeUrl = STRIPE_URLS[group] || STRIPE_URLS.a;
+
+        // Unique reference so the payment can be matched to this checkout
+        var ref = 'dfs-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,
+          10);
+        try {
+          navigator.sendBeacon(CART_URL, JSON.stringify({
+            ref: ref,
+            email: email,
+            link: stripeUrl
+          }));
+        } catch (e) {}
+
+        // The success state appears after Webflow handles the submit,
+        // so look for the icon once it exists
+        setTimeout(function () {
+          var spinIcon = document.getElementById('spin_this');
+          if (spinIcon) {
+            gsap.to(spinIcon, {
+              rotation: -360,
+              duration: 1,
+              ease: 'none',
+              repeat: -1,
+              transformOrigin: '50% 50%'
+            });
+          }
+        }, 100);
+
+        setTimeout(function () {
+          window.location.href = stripeUrl +
+            '?client_reference_id=' + encodeURIComponent(ref) +
+            '&prefilled_email=' + encodeURIComponent(email);
+        }, 1200);
+      }, true);
+    })();
+
+    // --- tiny helpers -------------------------------------------------
+    const q = (sel, root = document) => root.querySelector(sel);
+    const qa = (sel, root = document) => root.querySelectorAll(sel);
+
+    // Loop/float a single element by selector, only if it exists.
+    function floatEl(sel, vars) {
+      const el = q(sel);
+      if (el) gsap.to(el, vars);
+    }
+
+    // --- Meet rimbo ---------------------------------------------------
+    floatEl("#rimbo_img", {
+      y: -12,
+      duration: 3,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1
+    });
+
+    // --- POWER BAR 1 --------------------------------------------------
+    const powerBar1 = q('[power_bar="1"]');
+    if (powerBar1) {
+      const pb1_bars1to4 = powerBar1.querySelectorAll(
+        '.e_bar[e_number="1"], .e_bar[e_number="2"], .e_bar[e_number="3"], .e_bar[e_number="4"]'
+      );
+      const pb1_bar5 = powerBar1.querySelector('.e_bar[e_number="5"]');
+
+      const tl_pb1 = gsap.timeline({
+        scrollTrigger: { trigger: powerBar1, start: "top 80%", end: "top 40%" }
+      });
+
+      tl_pb1.to(pb1_bars1to4, {
+        backgroundColor: "#0297DB",
+        stagger: 0.2,
+        ease: "power2.out"
+      });
+
+      if (pb1_bar5) {
+        const pb1_pulse = gsap.to(pb1_bar5, {
+          opacity: 1,
+          backgroundColor: "#0297DB",
+          repeat: -1,
+          yoyo: true,
+          duration: 0.8,
+          ease: "power1.inOut",
+          paused: true
+        });
+        tl_pb1.add(() => pb1_pulse.play());
+      }
+    }
+
+    // --- POWER BAR 2 --------------------------------------------------
+    const powerBar2 = q('[power_bar="2"]');
+    if (powerBar2) {
+      const pb2_bars1to15 = powerBar2.querySelectorAll(`
+        .e_bar[e_number="1"],
+        .e_bar[e_number="2"],
+        .e_bar[e_number="3"],
+        .e_bar[e_number="4"],
+        .e_bar[e_number="5"],
+        .e_bar[e_number="6"],
+        .e_bar[e_number="7"],
+        .e_bar[e_number="8"],
+        .e_bar[e_number="9"],
+        .e_bar[e_number="10"],
+        .e_bar[e_number="12"],
+        .e_bar[e_number="13"],
+        .e_bar[e_number="14"],
+        .e_bar[e_number="15"]
+      `);
+      const pb2_bars16to17 = powerBar2.querySelectorAll(
+        '.e_bar[e_number="16"], .e_bar[e_number="17"]'
+      );
+
+      const tl_pb2 = gsap.timeline({
+        scrollTrigger: { trigger: powerBar2, start: "top 80%", end: "top 40%" }
+      });
+
+      tl_pb2.to(pb2_bars1to15, {
+        backgroundColor: "#0297DB",
+        stagger: 0.15,
+        ease: "power2.out"
+      });
+
+      if (pb2_bars16to17.length) {
+        const pb2_pulse = gsap.to(pb2_bars16to17, {
+          opacity: 1,
+          backgroundColor: "#0297DB",
+          repeat: -1,
+          yoyo: true,
+          duration: 0.8,
+          stagger: 0.1,
+          ease: "power1.inOut",
+          paused: true
+        });
+        tl_pb2.add(() => pb2_pulse.play());
+      }
+    }
+
+    // --- COURSE OVERVIEW ----------------------------------------------
+    const courseOverview = q("#Course_Overview");
+    if (courseOverview) {
+      // Query the items once, derive the inner wraps from that.
+      const items = gsap.utils.toArray("#Course_Overview .course_item");
+
+      const ciWraps = items
+        .map(item => item.querySelector(".ci_wrap"))
+        .filter(Boolean);
+
+      if (ciWraps.length) {
+        gsap.from(ciWraps, {
+          y: 60,
+          x: 33,
+          rotation: -10,
+          opacity: 0,
+          ease: "power2.out",
+          stagger: 0.1,
+          duration: 1,
+          scrollTrigger: {
+            trigger: "#Course_Overview",
+            start: "top 60%"
+          }
+        });
+      }
+
+      // Hover animation (on each course_item)
+      items.forEach((item) => {
+        let subtleJiggle = gsap.timeline({ paused: true, repeat: -1, yoyo: true })
+          .to(item, { rotation: 0.2, x: 1, y: -1, duration: 0.2, ease: "sine.inOut" })
+          .to(item, { rotation: -0.2, x: -1, y: 1, duration: 0.2, ease: "sine.inOut" });
+
+        item.addEventListener("mouseenter", () => {
+          gsap.to(item, { scale: 1.1, duration: 0.3, ease: "power2.out" });
+          subtleJiggle.play();
+        });
+        item.addEventListener("mouseleave", () => {
+          gsap.to(item, {
+            scale: 1,
+            rotation: 0,
+            x: 0,
+            y: 0,
+            duration: 0.4,
+            ease: "power2.inOut"
+          });
+          subtleJiggle.pause(0);
+        });
+      });
+    }
+
+    // --- TESTIMONIAL --------------------------------------------------
+    qa('[data-testimonial]').forEach((section, idx) => {
+      let currentTState = null;
+      const T1 = section.querySelector('[data-t="1"]');
+      const T2 = section.querySelector('[data-t="2"]');
+      const T3 = section.querySelector('[data-t="3"]');
+      const btnT1 = section.querySelector('[data-btn-t="1"]');
+      const btnT2 = section.querySelector('[data-btn-t="2"]');
+      const btnT3 = section.querySelector('[data-btn-t="3"]');
+      const wrapT1 = section.querySelector('[data-wrap-t="1"]');
+      const wrapT2 = section.querySelector('[data-wrap-t="2"]');
+      const wrapT3 = section.querySelector('[data-wrap-t="3"]');
+      const progressBar =
+        section.querySelector('[data-progress]') ||
+        section.querySelector('[progress_bar_t]') ||
+        section.querySelector('#Progress_bar_T');
+
+      if (!T1 || !T2 || !T3 || !btnT1 || !btnT2 || !btnT3 ||
+        !wrapT1 || !wrapT2 || !wrapT3 || !progressBar) {
+        console.warn('Missing testimonial parts in section', idx);
+        return;
+      }
+
+      const slides = [T1, T2, T3];
+      const btns = [btnT1, btnT2, btnT3];
+
+      // --- initial state: hard set, geen fade/flits bij load ---
+      gsap.set([T2, T3], { autoAlpha: 0, pointerEvents: "none" });
+      gsap.set(T1, { autoAlpha: 1, pointerEvents: "auto" });
+      section.querySelectorAll(".t-btn").forEach((b) => b.classList.remove("is-active"));
+      btnT1.classList.add("is-active");
+      currentTState = 1;
+
+      // --- één generieke state-switcher i.p.v. 3x dezelfde functie ---
+      function goToState(n) {
+        if (currentTState === n) return;
+        slides.forEach((slide, i) => {
+          const active = i === n - 1;
+          gsap.to(slide, {
+            autoAlpha: active ? 1 : 0,
+            duration: 0.5,
+            pointerEvents: active ? "auto" : "none"
+          });
+        });
+        section.querySelectorAll(".t-btn").forEach((b) => b.classList.remove("is-active"));
+        btns[n - 1].classList.add("is-active");
+        currentTState = n;
+        resetProgress();
+      }
+
+      wrapT1.addEventListener("click", () => goToState(1));
+      wrapT2.addEventListener("click", () => goToState(2));
+      wrapT3.addEventListener("click", () => goToState(3));
+
+      function startProgressLoop() {
+        gsap.set(progressBar, { x: "-100%" });
+        gsap.to(progressBar, {
+          x: "0%",
+          duration: 12,
+          ease: "none",
+          onComplete: () => goToState(currentTState === 3 ? 1 : currentTState + 1)
+        });
+      }
+
+      function resetProgress() {
+        gsap.killTweensOf(progressBar);
+        startProgressLoop();
+      }
+
+      // één keer starten — niet dubbel
+      startProgressLoop();
+    });
+
+    // --- nice blue line animation -------------------------------------
+    qa('[data-line-container]').forEach((container) => {
+      const line = container.querySelector('[data-bleu-line]');
+      if (!line) return;
+      const containerWidth = container.offsetWidth;
+
+      gsap.set(line, { x: "-2rem", scaleX: 0.2, transformOrigin: "left center" });
+      gsap.timeline({ repeat: -1, repeatDelay: 0.2 })
+        .to(line, { duration: 0.3, ease: "power1.in" })
+        .to(line, { x: containerWidth + 160, scaleX: 1.4, duration: 4.4, ease: "power2.inOut" })
+        .to(line, { duration: 0.3, ease: "power1.out" })
+        .add(() => { gsap.set(line, { x: "-2rem", scaleX: 0.2 }); });
+    });
+
+    // --- dino stuff ---------------------------------------------------
+    floatEl("#dino", {
+      xPercent: -2,
+      rotation: -6,
+      duration: 1,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+      transformOrigin: "center"
+    });
+    floatEl("#hourglass", {
+      rotation: 360,
+      transformOrigin: "50% 50%",
+      repeat: -1,
+      ease: "linear",
+      duration: 3
+    });
+    floatEl("#hourglass", {
+      xPercent: -4,
+      duration: 1,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+      transformOrigin: "center"
+    });
+    floatEl("#ERROR", {
+      opacity: 1,
+      xPercent: -4,
+      rotation: -2,
+      scale: 1.2,
+      duration: 1,
+      ease: "sine.inOut",
+      repeat: -1,
+      yoyo: true
+    });
+    floatEl("#ERROR2", {
+      opacity: 1,
+      xPercent: 2,
+      rotation: 2,
+      scale: 1.4,
+      duration: 2,
+      ease: "sine.inOut",
+      repeat: -1,
+      yoyo: true
+    });
+    floatEl("#ERROR3", {
+      opacity: 1,
+      xPercent: 6,
+      rotation: -2,
+      scale: 1.8,
+      duration: 2.2,
+      ease: "sine.inOut",
+      repeat: -1,
+      yoyo: true
+    });
+
+    function initCSSMarquee() {
+      const defaultSpeed = 60; // fallback when no attribute is set
+      const marquees = qa('[data-css-marquee]');
+      if (!marquees.length) return;
+
+      // Duplicate each list inside its container
+      marquees.forEach(marquee => {
+        marquee.querySelectorAll('[data-css-marquee-list]').forEach(list => {
+          const duplicate = list.cloneNode(true);
+          marquee.appendChild(duplicate);
+        });
+      });
+
+      // Pause/run based on whether the marquee is in view
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          entry.target.querySelectorAll('[data-css-marquee-list]').forEach(list =>
+            list.style.animationPlayState = entry.isIntersecting ? 'running' : 'paused'
+          );
+        });
+      }, { threshold: 0 });
+
+      // Set duration from width + per-marquee speed, then observe
+      marquees.forEach(marquee => {
+        const pixelsPerSecond =
+          parseFloat(marquee.getAttribute('data-css-marquee-speed')) || defaultSpeed;
+
+        marquee.querySelectorAll('[data-css-marquee-list]').forEach(list => {
+          list.style.animationDuration = (list.offsetWidth / pixelsPerSecond) + 's';
+          list.style.animationPlayState = 'paused';
+        });
+        observer.observe(marquee);
+      });
+    }
+    initCSSMarquee();
+
+    // --- globe --------------------------------------------------------
+    function initAcceleratingGlobe() {
+      qa('[data-accelerating-globe]').forEach(function (globe) {
+        const circles = globe.querySelectorAll('[data-accelerating-globe-circle]');
+        if (circles.length < 8) return; // needs at least 8
+
+        const tl = gsap.timeline({
+          repeat: -1,
+          defaults: { duration: 1, ease: "none" }
+        });
+
+        const widths = [
+          ["50%", "37.5%"],
+          ["37.5%", "25%"],
+          ["25%", "12.5%"],
+          ["calc(12.5% + 1px)", "calc(0% + 1px)"],
+          ["calc(0% + 1px)", "calc(12.5% + 1px)"],
+          ["12.5%", "25%"],
+          ["25%", "37.5%"],
+          ["37.5%", "50%"]
+        ];
+
+        circles.forEach((el, i) => {
+          const [fromW, toW] = widths[i];
+          tl.fromTo(el, { width: fromW }, { width: toW }, i === 0 ? 0 : "<");
+        });
+
+        let lastY = window.scrollY;
+        let lastT = performance.now();
+        let stopTimeout;
+
+        function onScroll() {
+          const now = performance.now();
+          const dy = window.scrollY - lastY;
+          const dt = now - lastT;
+          lastY = window.scrollY;
+          lastT = now;
+
+          const velocity = dt > 0 ? (dy / dt) * 1000 : 0; // px/s
+          const boost = Math.abs(velocity * 0.005);
+          const targetScale = boost + 1;
+          tl.timeScale(targetScale);
+
+          clearTimeout(stopTimeout);
+          stopTimeout = setTimeout(() => {
+            gsap.to(tl, {
+              timeScale: 1,
+              duration: 0.6,
+              ease: "power2.out",
+              overwrite: true
+            });
+          }, 100);
+        }
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+      });
+    }
+    initAcceleratingGlobe();
+
+    // DFS block assembly
+    // Host: any element with the custom attribute  data-dfs-blocks
+    // Look is controlled by CSS on the host div:
+    //   --blk-tone, --blk-radius, --blk-gap, --blk-shadow
+    // Optional attributes on the host:
+    //   data-merge="#4696E2"   colour the pieces settle to (default: same as --blk-tone)
+    //   data-bleed="1.15"      how far the scatter spills past the panel (1 = stays inside)
+    (function () {
+      'use strict';
+      // 5 rows x 8 cols, tiled by 10 tetrominoes
+      var PIECES = [
+        [
+          [0, 0],
+          [0, 1],
+          [1, 1],
+          [1, 2]
+        ],
+        [
+          [0, 2],
+          [0, 3],
+          [0, 4],
+          [0, 5]
+        ],
+        [
+          [0, 6],
+          [0, 7],
+          [1, 6],
+          [1, 7]
+        ],
+        [
+          [1, 3],
+          [1, 4],
+          [1, 5],
+          [2, 5]
+        ],
+        [
+          [1, 0],
+          [2, 0],
+          [3, 0],
+          [3, 1]
+        ],
+        [
+          [2, 1],
+          [2, 2],
+          [3, 2],
+          [3, 3]
+        ],
+        [
+          [2, 3],
+          [2, 4],
+          [3, 4],
+          [3, 5]
+        ],
+        [
+          [2, 6],
+          [2, 7],
+          [3, 7],
+          [4, 7]
+        ],
+        [
+          [3, 6],
+          [4, 6],
+          [4, 5],
+          [4, 4]
+        ],
+        [
+          [4, 0],
+          [4, 1],
+          [4, 2],
+          [4, 3]
+        ]
+      ];
+      // Per-piece lightness, so they start mismatched and resolve to one tone
+      var TONE_STEPS = [1.16, 0.84, 1.06, 0.75, 0.95, 1.11, 0.88, 1.00, 0.80, 1.08];
+      var COLS = 8,
+        ROWS = 5,
+        MAX_CELL = 46,
+        MIN_CELL = 14;
+      // Glow once the pieces come together. 0 = off.
+      var GLOW_HOLD = 0.55; // steady glow while assembled
+      var GLOW_FLASH = 0.45; // extra burst at the moment they merge
+      var GLOW_SIZE = 0.55; // blur radius as a fraction of one block
+      // Colour the pieces settle to once assembled. Set to null to keep the base tone.
+      var MERGE_TONE = '#4696E2';
+      // Pixel-stepped corners instead of a CSS radius.
+      var CORNER_STEPS = 2; // steps cut from each corner (0 = plain square)
+      var CORNER_UNIT = 0.06; // size of one step, as a fraction of the block
+      // Builds a clip-path with staircase corners for a square of side s
+      function pixelCorners(s, steps, u) {
+        if (!steps || u < 1) return 'none';
+        var p = [],
+          i;
+        p.push([steps * u, 0]);
+        p.push([s - steps * u, 0]);
+        for (i = 1; i <= steps; i++) {
+          p.push([s - (steps - i + 1) * u, i * u]);
+          p.push([s - (steps - i) * u, i * u]);
+        }
+        p.push([s, s - steps * u]);
+        for (i = 1; i <= steps; i++) {
+          p.push([s - i * u, s - (steps - i + 1) * u]);
+          p.push([s - i * u, s - (steps - i) * u]);
+        }
+        p.push([steps * u, s]);
+        for (i = 1; i <= steps; i++) {
+          p.push([(steps - i + 1) * u, s - i * u]);
+          p.push([(steps - i) * u, s - i * u]);
+        }
+        p.push([0, steps * u]);
+        for (i = steps; i >= 1; i--) {
+          p.push([(steps - i) * u, i * u]);
+          p.push([(steps - i + 1) * u, i * u]);
+        }
+        return 'polygon(' + p.map(function (q) {
+          return q[0].toFixed(1) + 'px ' + q[1].toFixed(1) + 'px';
+        }).join(',') + ')';
+      }
+      var T = { drift: 3000, gather: 2100, merge: 1100, hold: 3200, out: 900, back: 900 };
+      var CYCLE = T.drift + T.gather + T.merge + T.hold + T.out + T.back;
+
+      function easeInOut(x) { return 0.5 - 0.5 * Math.cos(Math.PI * x); }
+
+      function toRGB(str) {
+        var m = String(str).trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        if (m) {
+          var h = m[1];
+          if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+          return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6),
+            16)];
+        }
+        m = String(str).match(/rgba?\(([^)]+)\)/i);
+        if (m) { var p = m[1].split(',').map(parseFloat); return [p[0] | 0, p[1] | 0, p[2] | 0]; }
+        return [185, 175, 155];
+      }
+
+      function shade(rgb, f) {
+        return rgb.map(function (v) { return Math.max(0, Math.min(255, Math.round(v * f))); });
+      }
+
+      function seeded(n) {
+        var s = n;
+        return function () { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+      }
+      // Keeps a rotation in the -180..180 range. Safe to call only while the piece
+      // is drawn at full angle (loose = 1), where a 360 shift looks identical.
+      function wrapAngle(a) {
+        a = (a + 180) % 360;
+        if (a < 0) a += 360;
+        return a - 180;
+      }
+
+      function mount(host) {
+        if (host.dataset.dfsBlocksReady) return;
+        host.dataset.dfsBlocksReady = '1';
+        var cs = getComputedStyle(host);
+        if (cs.position === 'static') host.style.position = 'relative';
+        var baseRGB = toRGB(cs.getPropertyValue('--blk-tone') || '#B9AF9B');
+        var mergeSrc = host.getAttribute('data-merge') || MERGE_TONE;
+        var mergeRGB = mergeSrc ? toRGB(mergeSrc) : baseRGB;
+        var gap = parseFloat(cs.getPropertyValue('--blk-gap')) || 3;
+        var shadow = (cs.getPropertyValue('--blk-shadow') || '').trim() ||
+          '0 3px 5px rgba(0,0,0,.16)';
+        var bleed = parseFloat(host.getAttribute('data-bleed')) || 1.15;
+        var layer = document.createElement('div');
+        layer.className = 'dfs-blk-layer';
+        host.appendChild(layer);
+        var rnd = seeded(1277);
+        var pieces = PIECES.map(function (cells, i) {
+          var minR = 99,
+            minC = 99,
+            maxR = -1,
+            maxC = -1;
+          cells.forEach(function (q) {
+            minR = Math.min(minR, q[0]);
+            minC = Math.min(minC, q[1]);
+            maxR = Math.max(maxR, q[0]);
+            maxC = Math.max(maxC, q[1]);
+          });
+          var el = document.createElement('div');
+          el.className = 'dfs-blk-piece';
+          var squares = cells.map(function () {
+            var s = document.createElement('div');
+            s.className = 'dfs-blk-cell';
+            el.appendChild(s);
+            return s;
+          });
+          layer.appendChild(el);
+          var theta = (i / PIECES.length) * Math.PI * 2 + rnd() * 0.5;
+          return {
+            el: el,
+            squares: squares,
+            cells: cells,
+            minR: minR,
+            minC: minC,
+            maxR: maxR,
+            maxC: maxC,
+            from: shade(baseRGB, TONE_STEPS[i % TONE_STEPS.length]),
+            theta: theta,
+            radius: 0.82 + rnd() * 0.28,
+            wobbleAmp: 0.05 + rnd() * 0.03,
+            wobbleX: 0.05 + rnd() * 0.03,
+            wobbleY: 0.065 + rnd() * 0.03,
+            phaseX: rnd() * 6.28,
+            phaseY: rnd() * 6.28,
+            spin: (rnd() < 0.5 ? -1 : 1) * (8 + rnd() * 46),
+            angle: rnd() * 360,
+            driftX: rnd() * 6.28,
+            driftY: rnd() * 6.28,
+            homeX: 0,
+            homeY: 0
+          };
+        });
+        var W = 0,
+          H = 0,
+          cellPx = 0;
+
+        function layout() {
+          W = host.clientWidth;
+          H = host.clientHeight;
+          if (!W || !H) return false;
+          var cell = Math.max(MIN_CELL, Math.min(W * 0.92 / COLS, H * 0.72 / ROWS, MAX_CELL));
+          cellPx = cell;
+          var ox = (W - cell * COLS) / 2,
+            oy = (H - cell * ROWS) / 2;
+          var side = cell - gap * 2;
+          var clip = pixelCorners(side, CORNER_STEPS, Math.max(1, Math.round(side * CORNER_UNIT)));
+          pieces.forEach(function (p) {
+            p.el.style.left = (ox + p.minC * cell) + 'px';
+            p.el.style.top = (oy + p.minR * cell) + 'px';
+            p.el.style.width = ((p.maxC - p.minC + 1) * cell) + 'px';
+            p.el.style.height = ((p.maxR - p.minR + 1) * cell) + 'px';
+            p.cells.forEach(function (q, j) {
+              var s = p.squares[j];
+              s.style.left = ((q[1] - p.minC) * cell + gap) + 'px';
+              s.style.top = ((q[0] - p.minR) * cell + gap) + 'px';
+              s.style.width = side + 'px';
+              s.style.height = side + 'px';
+              s.style.borderRadius = '0';
+              s.style.clipPath = clip;
+            });
+            // Scatter ring. X = how far sideways, Y = how far up/down, as a fraction of the panel.
+            p.homeX = Math.cos(p.theta) * W * 0.24 * p.radius * bleed;
+            p.homeY = Math.sin(p.theta) * H * 0.52 * p.radius * bleed;
+          });
+          return true;
+        }
+
+        function paint(gather, merge) {
+          var loose = 1 - gather;
+          pieces.forEach(function (p) {
+            var dx = p.homeX + Math.sin(p.driftX + p.phaseX) * W * p.wobbleAmp * 0.5;
+            var dy = p.homeY + Math.cos(p.driftY + p.phaseY) * H * p.wobbleAmp * 0.5;
+            p.el.style.transform =
+              'translate(' + (dx * loose).toFixed(2) + 'px,' + (dy * loose).toFixed(2) + 'px)' +
+              ' rotate(' + (p.angle * loose).toFixed(2) + 'deg)';
+            p.el.style.filter = gather > 0.85 ? 'drop-shadow(' + shadow + ')' : 'none';
+            var c = 'rgb(' +
+              Math.round(p.from[0] + (mergeRGB[0] - p.from[0]) * merge) + ',' +
+              Math.round(p.from[1] + (mergeRGB[1] - p.from[1]) * merge) + ',' +
+              Math.round(p.from[2] + (mergeRGB[2] - p.from[2]) * merge) + ')';
+            p.squares.forEach(function (s) { s.style.background = c; });
+          });
+        }
+
+        function renderStatic() {
+          if (layout()) {
+            layer.style.opacity = '1';
+            paint(1, 1);
+          }
+        }
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          renderStatic();
+          if (window.ResizeObserver) new ResizeObserver(renderStatic).observe(host);
+          return;
+        }
+        var clock = 0,
+          last = 0,
+          raf = null,
+          visible = false;
+
+        function frame(now) {
+          var dt = last ? Math.min(64, now - last) : 16;
+          last = now;
+          clock += dt;
+          var m = clock % CYCLE,
+            gather, merge, opacity;
+          var a = T.drift,
+            b = a + T.gather,
+            c = b + T.merge,
+            d = c + T.hold,
+            e = d + T.out;
+          if (m < a) {
+            gather = 0;
+            merge = 0;
+            opacity = 1;
+          }
+          else if (m < b) {
+            gather = easeInOut((m - a) / T.gather);
+            merge = 0;
+            opacity = 1;
+          }
+          else if (m < c) {
+            gather = 1;
+            merge = easeInOut((m - b) / T.merge);
+            opacity = 1;
+          }
+          else if (m < d) {
+            gather = 1;
+            merge = 1;
+            opacity = 1;
+          }
+          else if (m < e) {
+            gather = 1;
+            merge = 1;
+            opacity = 1 - easeInOut((m - d) / T.out);
+          }
+          else {
+            gather = 0;
+            merge = 0;
+            opacity = easeInOut((m - e) / T.back);
+          }
+          var sec = dt / 1000,
+            loose = 1 - gather;
+          pieces.forEach(function (p) {
+            p.angle += p.spin * sec * loose;
+            // Only wrap while fully loose: rotation is drawn as angle * loose, so an
+            // unwrapped angle would force the piece to unwind everything it has ever
+            // spun during the gather, and that unwind gets faster the longer the page
+            // stays open.
+            if (loose > 0.999) p.angle = wrapAngle(p.angle);
+            p.driftX += p.wobbleX * sec * 6.28 * loose;
+            p.driftY += p.wobbleY * sec * 6.28 * loose;
+          });
+          layer.style.opacity = opacity.toFixed(3);
+          paint(gather, merge);
+          raf = requestAnimationFrame(frame);
+        }
+
+        function start() {
+          if (!raf) {
+            last = 0;
+            raf = requestAnimationFrame(frame);
+          }
+        }
+
+        function stop() {
+          if (raf) {
+            cancelAnimationFrame(raf);
+            raf = null;
+          }
+        }
+        if (!layout()) requestAnimationFrame(layout);
+        if (window.ResizeObserver) new ResizeObserver(layout).observe(host);
+        else window.addEventListener('resize', layout);
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (entries) {
+            visible = entries[0].isIntersecting;
+            if (visible) { start(); } else { stop(); }
+          }, { threshold: 0.05 }).observe(host);
+        } else {
+          start();
+        }
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) { stop(); } else if (visible) { start(); }
+        });
+      }
+      document.querySelectorAll('[data-dfs-blocks]').forEach(mount);
+    })();
+  }
+
+  // =========================================================
+  // COURSE PLAYER — /courses/fundamentals
+  // (was Slater Course.js)
+  // =========================================================
+  function dfsCourse() {
+    const hamburger = document.querySelector('.bold-nav-full__hamburger');
+    const menuWrap = document.querySelector('.absoulte_menu_wrap');
+    const menuToggle = document.querySelector('.Menu_toggle');
+    let isOpen = false;
+    let heightUpdateTimeout = null;
+    let preferredSpeed = 1;
+
+    // Breakpoint for mobile/tablet
+    const MOBILE_BREAKPOINT = 768;
+
+    // Function to check if we're on mobile/tablet
+    function isMobileView() {
+      return window.innerWidth <= MOBILE_BREAKPOINT;
+    }
+
+    // Function to close the menu
+    function closeMenu() {
+      gsap.to(menuWrap, {
+        minHeight: 0,
+        duration: 0.4,
+        ease: 'power2.inOut'
+      });
+
+      isOpen = false;
+      document.body.classList.remove('menu-open');
+    }
+
+    // Function to update menu height when content changes
+    function updateMenuHeight() {
+      if (!menuWrap || !isOpen) return;
+
+      // Get current height
+      const currentHeight = menuWrap.offsetHeight;
+
+      // Temporarily remove minHeight to measure natural height
+      menuWrap.style.minHeight = 'none';
+      const newHeight = menuWrap.scrollHeight;
+
+      // Set back to current before animating
+      menuWrap.style.minHeight = currentHeight + 'px';
+
+      // Animate to new height
+      gsap.to(menuWrap, {
+        minHeight: newHeight,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+    }
+
+    // Function to open the menu
+    function openMenu() {
+      // First, set to auto to get the natural height
+      gsap.set(menuWrap, { minHeight: 'auto' });
+      // Get the calculated height
+      const fullHeight = menuWrap.scrollHeight;
+      // Reset to 0
+      gsap.set(menuWrap, { minHeight: 0 });
+      // Now animate to the calculated height
+      gsap.to(menuWrap, {
+        minHeight: fullHeight,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+
+      isOpen = true;
+      document.body.classList.add('menu-open');
+    }
+
+    // Function to toggle menu
+    function toggleMenu() {
+      if (!isOpen) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    }
+
+    // Hamburger click handler
+    if (hamburger && menuWrap) {
+      hamburger.addEventListener('click', toggleMenu);
+
+      // Listen for accordion clicks inside the menu (but not on the hamburger)
+      menuWrap.addEventListener('click', (e) => {
+        // Ignore if clicking the hamburger itself
+        if (e.target.closest('.bold-nav-full__hamburger')) return;
+
+        const accordionTrigger = e.target.closest('.course_module');
+        if (accordionTrigger) {
+          // Clear any pending update
+          if (heightUpdateTimeout) clearTimeout(heightUpdateTimeout);
+          // Wait for accordion animation to finish, then update
+          heightUpdateTimeout = setTimeout(updateMenuHeight, 350);
+        }
+      });
+    }
+
+    // Also support .Menu_toggle for mobile/tablet
+    if (menuToggle && menuWrap) {
+      menuToggle.addEventListener('click', toggleMenu);
+    }
+
+    //water horse
+    //water horse
+    //water horse
+
+    //water horse
+    gsap.registerPlugin(SplitText, CustomEase);
+
+    CustomEase.create("elastic",
+      "M0,0 C0.0127,0.0956 0.0562,0.434 0.076,0.5737 C0.0958,0.7134 0.1077,0.7761 0.1187,0.8382 C0.1297,0.9003 0.1341,0.9145 0.1419,0.9463 C0.1497,0.9781 0.1574,1.0055 0.1654,1.0292 C0.1734,1.0529 0.1814,1.0725 0.1897,1.0886 C0.198,1.1047 0.2086,1.1177 0.2153,1.1258 C0.222,1.1339 0.2248,1.1342 0.2297,1.137 C0.2346,1.1398 0.2396,1.1415 0.2448,1.1424 C0.25,1.1433 0.2554,1.1433 0.261,1.1423 C0.2666,1.1413 0.2704,1.1409 0.2786,1.1366 C0.2868,1.1323 0.2922,1.1308 0.3101,1.1165 C0.328,1.1022 0.3669,1.0665 0.3862,1.0507 C0.4055,1.0349 0.4118,1.0304 0.4257,1.0219 C0.4397,1.0134 0.4548,1.0053 0.4699,0.9995 C0.485,0.9937 0.4967,0.9898 0.5163,0.9872 C0.5359,0.9846 0.5383,0.9819 0.5877,0.9842 C0.6371,0.9865 0.7439,0.9985 0.8126,1.0011 C0.8813,1.0037 0.9688,1.0002 1,1"
+    );
+
+    // ---- HYDRATION TIMER ----
+    const HYDRATION_INTERVAL = 30 * 60 * 1000; // 30 min — for testing use 20 * 1000
+    let hydrationEligible = false;
+    let hydrationTimer = null;
+
+    function startHydrationTimer() {
+      clearTimeout(hydrationTimer);
+      hydrationEligible = false;
+      hydrationTimer = setTimeout(() => {
+        hydrationEligible = true;
+      }, HYDRATION_INTERVAL);
+    }
+
+    startHydrationTimer();
+
+    document.fonts.ready.then(() => {
+      const wrap = document.querySelector('[data-hydration="component"]');
+      if (!wrap) return;
+
+      const horse = wrap.querySelector('[data-hydration="horse"]');
+      const text = wrap.querySelector('[data-hydration="text"]');
+      const reset = wrap.querySelector('[data-hydration="reset"]');
+
+      let tlIn, tlOut, words, idle;
+
+      function startIdle() {
+        stopIdle();
+        idle = gsap.timeline({ repeat: -1, yoyo: true })
+          .to(horse, {
+            y: -4,
+            rotation: 2,
+            duration: 1.8,
+            ease: 'sine.inOut',
+            transformOrigin: '50% 60%'
+          })
+          .to(horse, {
+            y: 0,
+            rotation: -1,
+            duration: 2.2,
+            ease: 'sine.inOut'
+          });
+      }
+
+      function stopIdle() {
+        if (idle) {
+          idle.kill();
+          idle = null;
+        }
+        gsap.set(horse, { y: 0, rotation: 0 });
+      }
+
+      SplitText.create(text, {
+        type: 'lines, words',
+        mask: 'lines',
+        autoSplit: true,
+        onSplit(instance) {
+          words = instance.words;
+
+          tlIn = gsap.timeline({ paused: true, onComplete: startIdle })
+            .set(wrap, { visibility: 'visible' })
+            .from(horse, {
+              yPercent: 110,
+              duration: 1,
+              ease: 'elastic'
+            })
+            .from(words, {
+              yPercent: 110,
+              duration: 0.9,
+              stagger: 0.06,
+              ease: 'elastic'
+            }, '-=0.7')
+            .from(reset, {
+              yPercent: 110,
+              duration: 0.9,
+              ease: 'elastic'
+            }, '-=0.75');
+
+          return tlIn;
+        }
+      });
+
+      function playExit() {
+        if (!words) return;
+        if (tlOut && tlOut.isActive()) return;
+
+        stopIdle();
+
+        tlOut = gsap.timeline({
+            onComplete() {
+              gsap.set(wrap, { visibility: 'hidden' });
+              startHydrationTimer(); // next cycle begins on dismissal
+            }
+          })
+          .fromTo(reset, { rotation: 0 }, {
+            rotation: -720,
+            duration: 1,
+            ease: 'power2.inOut',
+            transformOrigin: '50% 50%'
+          }, 0)
+          .to(horse, {
+            yPercent: 110,
+            duration: 0.5,
+            ease: 'power2.in'
+          }, 0)
+          .to(words, {
+            yPercent: 110,
+            duration: 0.4,
+            stagger: 0.04,
+            ease: 'power2.in'
+          }, 0.25)
+          .to(reset, {
+            yPercent: 110,
+            duration: 0.4,
+            ease: 'power2.in'
+          }, 1);
+      }
+
+      document.addEventListener('click', (e) => {
+        if (!tlIn) return;
+
+        // SHOW — only when the 30-min cycle has elapsed
+        if (e.target.closest('[data-hydration-trigger]')) {
+          if (!hydrationEligible) return;
+          hydrationEligible = false;
+          if (tlOut) tlOut.kill();
+          stopIdle();
+          gsap.set(reset, { rotation: 0 });
+          gsap.set([horse, reset], { yPercent: 110 });
+          if (words) gsap.set(words, { yPercent: 110 });
+          tlIn.timeScale(0.5).restart();
+          return;
+        }
+
+        // HIDE — click anywhere on the component
+        if (e.target.closest('[data-hydration="component"]')) {
+          playExit();
+        }
+      }, true);
+    });
+
+    // ==============================================
+    // AUTO-DETECT COURSE FROM URL
+    // e.g., /courses/fundamentals → "fundamentals"
+    const currentCourse = window.location.pathname.split('/courses/')[1]?.split('/')[0] ||
+      'fundamentals';
+    console.log('Current course:', currentCourse);
+    const lessons = [
+      { id: "lesson-0.1", complete: false },
+      { id: "lesson-0.2", complete: false },
+      { id: "lesson-1.1", complete: false },
+      { id: "lesson-1.2", complete: false },
+      { id: "lesson-1.3", complete: false },
+      { id: "lesson-1.4", complete: false },
+      { id: "lesson-2.1", complete: false },
+      { id: "lesson-2.2", complete: false },
+      { id: "lesson-3.1", complete: false },
+      { id: "lesson-3.2", complete: false },
+      { id: "lesson-3.3", complete: false },
+      { id: "lesson-4.1", complete: false },
+      { id: "lesson-4.2", complete: false },
+      { id: "lesson-4.3", complete: false },
+      { id: "lesson-4.4", complete: false },
+      { id: "lesson-5.1", complete: false },
+      { id: "lesson-5.2", complete: false },
+      { id: "lesson-5.3", complete: false },
+      { id: "lesson-5.4", complete: false },
+      { id: "lesson-5.5", complete: false },
+      { id: "lesson-5.6", complete: false },
+      { id: "lesson-6.1", complete: false },
+      { id: "lesson-6.2", complete: false },
+      { id: "lesson-6.3", complete: false },
+      { id: "lesson-6.4", complete: false },
+      { id: "lesson-7.1", complete: false },
+      { id: "lesson-7.2", complete: false },
+      { id: "lesson-7.3", complete: false },
+      { id: "lesson-7.4", complete: false },
+      { id: "lesson-7.5", complete: false },
+      { id: "lesson-8.1", complete: false },
+      { id: "lesson-8.2", complete: false },
+      { id: "lesson-8.3", complete: false },
+      { id: "lesson-8.4", complete: false }
+    ];
+    // PROGRESS FUNCTION
+    const progressBar = document.querySelector(".progress_juice");
+    const completeButtons = document.querySelectorAll("[data-action='complete-lesson']");
+    // Initial bar state
+    if (progressBar) {
+      gsap.set(progressBar, { xPercent: -100 });
+    }
+    // COMPLETE BUTTONS (marks complete and goes to next)
+    completeButtons.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        let lessonId = btn.getAttribute('data-lesson-id');
+        if (!lessonId) {
+          const activeLesson = document.querySelector('.c_item.is-active');
+          lessonId = activeLesson?.id;
+        }
+        if (lessonId) {
+          markLessonComplete(lessonId);
+          goToNextLesson(lessonId);
+        }
+      });
+    });
+    // TOGGLE BUTTONS (toggle complete/incomplete)
+    const toggleButtons = document.querySelectorAll("[data-action='toggle-lesson']");
+    toggleButtons.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        let lessonId = btn.getAttribute('data-lesson-id');
+        if (!lessonId) {
+          const closestItem = btn.closest('.c_item');
+          lessonId = closestItem?.id;
+        }
+        if (lessonId) {
+          toggleLessonComplete(lessonId);
+        }
+      });
+    });
+    // PREVIOUS BUTTON (navigate to previous lesson)
+    const previousButton = document.getElementById("previous");
+    if (previousButton) {
+      previousButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const activeLesson = document.querySelector('.c_item.is-active');
+        if (activeLesson) {
+          goToPreviousLesson(activeLesson.id);
+        }
+      });
+    }
+
+    function markLessonComplete(lessonId) {
+      const lesson = lessons.find(l => l.id === lessonId);
+      if (!lesson) return;
+      // Only mark as complete (doesn't toggle)
+      if (!lesson.complete) {
+        lesson.complete = true;
+        updateLessonUI(lessonId, true);
+        updateProgress();
+      }
+    }
+
+    function goToNextLesson(currentLessonId) {
+      const currentIndex = lessons.findIndex(l => l.id === currentLessonId);
+      if (currentIndex === -1 || currentIndex >= lessons.length - 1) return;
+      const nextLesson = lessons[currentIndex + 1];
+      const nextLessonElement = document.getElementById(nextLesson.id);
+      if (!nextLessonElement) return;
+      nextLessonElement.click();
+    }
+
+    function goToPreviousLesson(currentLessonId) {
+      const currentIndex = lessons.findIndex(l => l.id === currentLessonId);
+      if (currentIndex === -1 || currentIndex <= 0) return;
+      const previousLesson = lessons[currentIndex - 1];
+      const previousLessonElement = document.getElementById(previousLesson.id);
+      if (!previousLessonElement) return;
+      previousLessonElement.click();
+    }
+
+    function toggleLessonComplete(lessonId) {
+      const lesson = lessons.find(l => l.id === lessonId);
+      if (!lesson) return;
+      lesson.complete = !lesson.complete;
+      updateLessonUI(lessonId, lesson.complete);
+      updateProgress();
+    }
+
+    function updateLessonUI(lessonId, isComplete) {
+      const lessonItem = document.getElementById(lessonId);
+      if (!lessonItem) return;
+      const checkFill = lessonItem.querySelector(".check_fill");
+      if (checkFill) {
+        if (isComplete) {
+          checkFill.classList.add("is-complete");
+        } else {
+          checkFill.classList.remove("is-complete");
+        }
+      }
+    }
+
+    function updateProgress(isPageLoad = false) {
+      const completed = lessons.filter(l => l.complete).length;
+      const total = lessons.length;
+      const percent = Math.round((completed / total) * 100);
+      // Slower animation on page load, faster on lesson complete
+      const duration = isPageLoad ? 1.2 : 0.6;
+      // Animate number wheels
+      animateProgressNumbers(currentCourse, percent, duration);
+      // Animate progress bar
+      gsap.to(progressBar, {
+        xPercent: percent - 100,
+        duration: duration,
+        ease: "power2.out"
+      });
+      // Save progress to Memberstack whenever it changes (but not on page load)
+      if (!isPageLoad) {
+        saveMemberProgress();
+      }
+    }
+    // Animate the rolling number wheels
+    function animateProgressNumbers(courseName, percent, duration = 0.6) {
+      const container = document.querySelector(`[data-progress-numbers="${courseName}"]`);
+      if (!container) return;
+      const firstWrap = container.querySelector(
+        '.loading__number-group.is--first .loading__number-wrap');
+      const secondWrap = container.querySelector(
+        '.loading__number-group.is--second .loading__number-wrap');
+      const thirdWrap = container.querySelector(
+        '.loading__number-group.is--third .loading__number-wrap');
+      // Calculate digit positions
+      let firstIndex, secondIndex, thirdIndex;
+      if (percent === 100) {
+        // 100% → show "1", "0", "0"
+        firstIndex = 1; // "1" is at index 1
+        secondIndex = 10; // final "0" is at index 10
+        thirdIndex = 10; // final "0" is at index 10
+      } else if (percent >= 10) {
+        // 10-99% → empty, tens digit, ones digit
+        const tens = Math.floor(percent / 10);
+        const ones = percent % 10;
+        firstIndex = 0; // empty
+        secondIndex = tens; // 1-9 are at index 1-9
+        thirdIndex = ones; // 0-9 are at index 0-9
+      } else {
+        // 0-9% → empty, empty, ones digit
+        firstIndex = 0; // empty
+        secondIndex = 0; // empty
+        thirdIndex = percent; // 0-9 are at index 0-9
+      }
+      // Animate each wheel
+      // First group has 2 items, so each step = 50%
+      // Second group has 11 items, so each step = 100/11 ≈ 9.09%
+      // Third group has 11 items, so each step = 100/11 ≈ 9.09%
+      const ease = 'power2.out';
+      if (firstWrap) {
+        gsap.to(firstWrap, {
+          yPercent: firstIndex * -50, // 2 items: 100/2 = 50% per step
+          duration: duration,
+          ease: ease
+        });
+      }
+      if (secondWrap) {
+        gsap.to(secondWrap, {
+          yPercent: secondIndex * -(100 / 11), // 11 items
+          duration: duration,
+          ease: ease
+        });
+      }
+      if (thirdWrap) {
+        gsap.to(thirdWrap, {
+          yPercent: thirdIndex * -(100 / 11), // 11 items
+          duration: duration,
+          ease: ease
+        });
+      }
+    }
+    // INITIAL STATE - Load first incomplete lesson
+    function setInitialState() {
+      document.querySelectorAll('.c_item').forEach(el => el.classList.remove('is-active'));
+      document.querySelectorAll('.course_module').forEach(el => el.classList.remove('is-active'));
+      document.querySelectorAll('.course_content').forEach(el => el.classList.remove(
+        'is-active'));
+      // Find first incomplete lesson
+      const firstIncompleteLesson = lessons.find(l => !l.complete);
+      // If all complete, use last lesson; otherwise use first incomplete
+      const targetLesson = firstIncompleteLesson || lessons[lessons.length - 1];
+      const targetLessonElement = document.getElementById(targetLesson.id);
+      if (!targetLessonElement) return;
+      // Activate the lesson
+      targetLessonElement.classList.add('is-active');
+      // Activate corresponding module
+      const module = targetLessonElement.closest('.accordion-css__item')?.querySelector(
+        '.course_module');
+      if (module) module.classList.add('is-active');
+      // Use existing switchLessonContent function
+      switchLessonContent(targetLessonElement);
+    }
+    // LESSON NAVIGATION
+    function switchLessonContent(item) {
+      // ---- CLOSE MENU ON MOBILE/TABLET ----
+      if (isMobileView() && isOpen) {
+        closeMenu();
+      }
+
+      const videoSrc = item.getAttribute('data-video-src');
+      const textId = item.getAttribute('data-text-id');
+      const placeholderSrc = item.getAttribute('data-placeholder');
+      // ---- CLOSE FINISH LINK BLOCK ----
+      if (finishLinkBlock) {
+        finishLinkBlock.style.display = 'none';
+      }
+      // ---- RESET VIDEO PROGRESS BAR ----
+      const oldPlayer = document.getElementById('video-player');
+      if (oldPlayer) {
+        const progressBar = oldPlayer.querySelector('[data-player-progress]');
+        const handle = oldPlayer.querySelector('[data-player-timeline-handle]');
+        const timeProgressEls = oldPlayer.querySelectorAll('[data-player-time-progress]');
+        if (progressBar) {
+          progressBar.style.transform = 'translateX(-100%)';
+        }
+        if (handle) {
+          handle.style.left = '0%';
+        }
+        if (timeProgressEls.length) {
+          timeProgressEls.forEach(function (el) {
+            el.textContent = '00:00';
+          });
+        }
+      }
+      // ---- TEXT SWITCH ----
+      document.querySelectorAll('.course_content').forEach(el => {
+        el.classList.remove('is-active');
+      });
+      const activeText = document.getElementById(textId);
+      if (activeText) {
+        activeText.classList.add('is-active');
+      }
+      // ---- PLACEHOLDER SWITCH ----
+      const placeholder = document.getElementById('placeholder_img');
+      if (placeholder) {
+        if (placeholderSrc) {
+          placeholder.removeAttribute('srcset'); // Remove srcset so src takes priority
+          placeholder.setAttribute('src', placeholderSrc);
+        } else {
+          console.warn(`No data-placeholder attribute found for ${item.id}`);
+        }
+      }
+      // ---- FULL VIDEO PLAYER RESET ----
+      if (!oldPlayer || !videoSrc) return;
+      const newPlayer = oldPlayer.cloneNode(true);
+      // Reset required attributes
+      newPlayer.setAttribute('data-player-src', videoSrc);
+      newPlayer.setAttribute('data-player-activated', 'false');
+      newPlayer.setAttribute('data-player-status', 'idle');
+      // Replace the old player in DOM
+      oldPlayer.parentNode.replaceChild(newPlayer, oldPlayer);
+      // Reinitialize Bunny player
+      initBunnyPlayer();
+    }
+
+    function setupCourseItemClicks() {
+      document.querySelectorAll('.c_item').forEach(item => {
+        item.addEventListener('click', () => {
+          // Check if this lesson is already active
+          if (item.classList.contains('is-active')) {
+            return; // Don't reload if already active
+          }
+          // --- Close menu on mobile/tablet ---
+          if (isMobileView() && isOpen) {
+            closeMenu();
+          }
+          // --- Update active lesson ---
+          document.querySelectorAll('.c_item').forEach(el => el.classList.remove(
+            'is-active'));
+          item.classList.add('is-active');
+          // --- Update active module ---
+          document.querySelectorAll('.course_module').forEach(mod => mod.classList.remove(
+            'is-active'));
+          const module = item.closest('.accordion-css__item')?.querySelector(
+            '.course_module');
+          if (module) module.classList.add('is-active');
+          // --- Update accordion status attributes ---
+          updateAccordionStatus();
+          // --- Switch content + video ---
+          switchLessonContent(item);
+        });
+      });
+    }
+    // Function to update accordion status based on active module
+    function updateAccordionStatus() {
+      // First, set all accordion items to not-active
+      document.querySelectorAll('.accordion-css__item').forEach(accordionItem => {
+        accordionItem.setAttribute('data-accordion-status', 'not-active');
+      });
+      // Then find the active module and set its parent accordion item to active
+      const activeModule = document.querySelector('.course_module.is-active');
+      if (activeModule) {
+        const accordionItem = activeModule.closest('.accordion-css__item');
+        if (accordionItem) {
+          accordionItem.setAttribute('data-accordion-status', 'active');
+        }
+      }
+    }
+    // Init on page load
+    setTimeout(async () => {
+      // Remove srcset immediately so placeholder images work correctly
+      const placeholder = document.getElementById('placeholder_img');
+      if (placeholder) {
+        placeholder.removeAttribute('srcset');
+      }
+      // Load member progress first (before setting initial state)
+      await loadMemberProgress();
+      setInitialState();
+      setupCourseItemClicks();
+      updateAccordionStatus(); // Set initial accordion status
+    }, 200);
+    // Function to load member's progress from Memberstack
+    async function loadMemberProgress() {
+      try {
+        const memberData = await window.$memberstackDom.getMemberJSON();
+        console.log('=== LOADING MEMBER DATA ===');
+        console.log('Current course:', currentCourse);
+        console.log('Full member data:', memberData);
+        // Check if member has saved progress for this course
+        if (memberData && memberData.data && memberData.data.courses && memberData.data.courses[
+            currentCourse]) {
+          console.log('✅ Found saved progress for', currentCourse);
+          const savedLessons = memberData.data.courses[currentCourse].lessons;
+          console.log('Saved lessons:', savedLessons);
+          // Update our lessons array with saved progress
+          savedLessons.forEach(savedLesson => {
+            const lesson = lessons.find(l => l.id === savedLesson.id);
+            if (lesson) {
+              lesson.complete = savedLesson.complete;
+            }
+          });
+          // Update UI to reflect loaded progress
+          lessons.forEach(lesson => {
+            updateLessonUI(lesson.id, lesson.complete);
+          });
+          updateProgress(true); // true = page load, slower animation
+          console.log('Current lessons state after loading:', lessons);
+          console.log('=========================');
+        } else {
+          console.log('❌ No saved progress found for', currentCourse, '- using defaults');
+          console.log('=========================');
+        }
+      } catch (error) {
+        console.error('❌ Error loading member data:', error);
+      }
+    }
+    // Function to save progress to Memberstack
+    async function saveMemberProgress() {
+      try {
+        console.log('=== SAVING PROGRESS ===');
+        console.log('Course:', currentCourse);
+        console.log('Lessons being saved:', lessons);
+        // First get existing data to preserve other courses
+        const memberData = await window.$memberstackDom.getMemberJSON();
+        const existingCourses = (memberData && memberData.data && memberData.data.courses) || {};
+        // Update only the current course
+        const updatedCourses = {
+          ...existingCourses,
+          [currentCourse]: {
+            lessons: lessons
+          }
+        };
+        const result = await window.$memberstackDom.updateMemberJSON({
+          json: {
+            courses: updatedCourses
+          }
+        });
+        console.log('✅ Progress saved successfully!');
+        console.log('Save result:', result);
+        console.log('======================');
+      } catch (error) {
+        console.error('❌ Error saving progress:', error);
+      }
+    }
+    // VIDEO PLAYER
+    // VIDEO PLAYER
+    // VIDEO PLAYER
+    // Get the finish link block element (available globally)
+    var finishLinkBlock = document.getElementById('finish_video');
+    // Add click listener to close the finish link block
+    if (finishLinkBlock) {
+      finishLinkBlock.addEventListener('click', function () {
+        finishLinkBlock.style.display = 'none';
+      });
+    }
+
+    function initBunnyPlayer() {
+      document.querySelectorAll('[data-bunny-player-init]').forEach(function (player) {
+        var src = player.getAttribute('data-player-src');
+        if (!src) return;
+        var video = player.querySelector('video');
+        if (!video) return;
+        try { video.pause(); } catch (_) {}
+        try {
+          video.removeAttribute('src');
+          video.load();
+        } catch (_) {}
+        // Attribute helpers
+        function setStatus(s) {
+          if (player.getAttribute('data-player-status') !== s) {
+            player.setAttribute('data-player-status', s);
+          }
+        }
+
+        function setMutedState(v) {
+          video.muted = !!v;
+          player.setAttribute('data-player-muted', video.muted ? 'true' : 'false');
+        }
+
+        function setFsAttr(v) {
+          player.setAttribute('data-player-fullscreen', v ? 'true' : 'false');
+        }
+
+        function setActivated(v) {
+          player.setAttribute('data-player-activated', v ? 'true' : 'false');
+        }
+        if (!player.hasAttribute('data-player-activated')) setActivated(false);
+        // Elements
+        var timeline = player.querySelector('[data-player-timeline]');
+        var progressBar = player.querySelector('[data-player-progress]');
+        var bufferedBar = player.querySelector('[data-player-buffered]');
+        var handle = player.querySelector('[data-player-timeline-handle]');
+        var timeDurationEls = player.querySelectorAll('[data-player-time-duration]');
+        var timeProgressEls = player.querySelectorAll('[data-player-time-progress]');
+        // Flags
+        var updateSize = player.getAttribute(
+          'data-player-update-size'); // "true" | "cover" | null
+        var lazyMode = player.getAttribute('data-player-lazy'); // "true" | "meta" | null
+        var isLazyTrue = lazyMode === 'true';
+        var isLazyMeta = lazyMode === 'meta';
+        var autoplay = player.getAttribute('data-player-autoplay') === 'true';
+        var initialMuted = player.getAttribute('data-player-muted') === 'true';
+        // Used to suppress 'ready' flicker when user just pressed play in lazy modes
+        var pendingPlay = false;
+        // Autoplay forces muted; IO will trigger "fake click"
+        if (autoplay) {
+          setMutedState(true);
+          video.loop = true;
+        } else { setMutedState(initialMuted); }
+        video.setAttribute('muted', '');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.playsInline = true;
+        if (typeof video.disableRemotePlayback !== 'undefined') video.disableRemotePlayback =
+          true;
+        if (autoplay) video.autoplay = false;
+        var isSafariNative = !!video.canPlayType('application/vnd.apple.mpegurl');
+        var canUseHlsJs = !!(window.Hls && Hls.isSupported()) && !isSafariNative;
+        // Minimal ratio fetch when requested (and not already handled by lazy meta)
+        if (updateSize === 'true' && !isLazyMeta) {
+          if (isLazyTrue) {
+            // Do nothing: no fetch, no <video> touch when lazy=true
+          } else {
+            var prev = video.preload;
+            video.preload = 'metadata';
+            var onMeta2 = function () {
+              setBeforeRatio(player, updateSize, video.videoWidth, video.videoHeight);
+              video.removeEventListener('loadedmetadata', onMeta2);
+              video.preload = prev || '';
+            };
+            video.addEventListener('loadedmetadata', onMeta2, { once: true });
+            video.src = src;
+          }
+        }
+        //  Lazy meta fetch (duration + aspect) without attaching playback
+        function fetchMetaOnce() {
+          getSourceMeta(src, canUseHlsJs).then(function (meta) {
+            if (meta.width && meta.height) setBeforeRatio(player, updateSize, meta.width,
+              meta
+              .height);
+            if (timeDurationEls.length && isFinite(meta.duration) && meta.duration > 0) {
+              setText(timeDurationEls, formatTime(meta.duration));
+            }
+            readyIfIdle(player, pendingPlay);
+          });
+        }
+        // Attach media only once (for actual playback)
+        var isAttached = false;
+        var userInteracted = false;
+        var lastPauseBy = '';
+
+        function attachMediaOnce() {
+          if (isAttached) return;
+          isAttached = true;
+          if (player._hls) { try { player._hls.destroy(); } catch (_) {} player._hls = null; }
+          if (isSafariNative) {
+            video.preload = (isLazyTrue || isLazyMeta) ? 'auto' : video.preload;
+            video.src = src;
+            video.addEventListener('loadedmetadata', function () {
+              readyIfIdle(player, pendingPlay);
+              if (updateSize === 'true') setBeforeRatio(player, updateSize, video
+                .videoWidth,
+                video.videoHeight);
+              if (timeDurationEls.length) setText(timeDurationEls, formatTime(video
+                .duration));
+            }, { once: true });
+          } else if (canUseHlsJs) {
+            var hls = new Hls({ maxBufferLength: 10 });
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MEDIA_ATTACHED, function () { hls.loadSource(src); });
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+              readyIfIdle(player, pendingPlay);
+              if (updateSize === 'true') {
+                var lvls = hls.levels || [];
+                var best = bestLevel(lvls);
+                if (best && best.width && best.height) setBeforeRatio(player, updateSize,
+                  best
+                  .width, best.height);
+              }
+            });
+            hls.on(Hls.Events.LEVEL_LOADED, function (e, data) {
+              if (data && data.details && isFinite(data.details.totalduration)) {
+                if (timeDurationEls.length) setText(timeDurationEls, formatTime(data
+                  .details
+                  .totalduration));
+              }
+            });
+            player._hls = hls;
+          } else {
+            video.src = src;
+          }
+        }
+        // Initialize based on lazy mode
+        if (isLazyMeta) {
+          fetchMetaOnce();
+          video.preload = 'none';
+        } else if (isLazyTrue) {
+          video.preload = 'none';
+        } else {
+          attachMediaOnce();
+        }
+        // Toggle play/pause
+        function togglePlay() {
+          userInteracted = true;
+          if (video.paused || video.ended) {
+            if ((isLazyTrue || isLazyMeta) && !isAttached) attachMediaOnce();
+            pendingPlay = true;
+            lastPauseBy = '';
+            setStatus('loading');
+            safePlay(video);
+          } else {
+            lastPauseBy = 'manual';
+            video.pause();
+          }
+        }
+        // Toggle mute
+        function toggleMute() {
+          video.muted = !video.muted;
+          player.setAttribute('data-player-muted', video.muted ? 'true' : 'false');
+        }
+
+        // Playback speed
+        var speeds = [1, 1.2, 1.5, 2];
+        var speedIndex = Math.max(0, speeds.indexOf(preferredSpeed));
+
+        function applySpeed() {
+          video.playbackRate = speeds[speedIndex];
+          var newText = speeds[speedIndex].toFixed(1) + 'x'; // toFixed(1) → "1.0x", "2.0x"
+          var labels = player.querySelectorAll('[data-player-speed-label]');
+          labels.forEach(function (el) {
+            gsap.to(el, {
+              opacity: 0,
+              duration: 0.12,
+              ease: 'power1.in',
+              onComplete: function () {
+                el.textContent = newText;
+                gsap.to(el, { opacity: 1, duration: 0.12, ease: 'power1.out' });
+              }
+            });
+          });
+          player.setAttribute('data-player-speed', speeds[speedIndex]);
+        }
+
+        function cycleSpeed() {
+          speedIndex = (speedIndex + 1) % speeds.length;
+          preferredSpeed = speeds[speedIndex]; // remember across lessons
+          applySpeed();
+        }
+
+        applySpeed();
+
+        // Fullscreen helpers
+        function isFsActive() {
+          return !!(document.fullscreenElement || document.webkitFullscreenElement);
+        }
+
+        function enterFullscreen() {
+          if (player.requestFullscreen) return player.requestFullscreen();
+          if (video.requestFullscreen) return video.requestFullscreen();
+          if (video.webkitSupportsFullscreen && typeof video.webkitEnterFullscreen ===
+            'function')
+            return video.webkitEnterFullscreen();
+        }
+
+        function exitFullscreen() {
+          if (document.exitFullscreen) return document.exitFullscreen();
+          if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+          if (video.webkitDisplayingFullscreen && typeof video.webkitExitFullscreen ===
+            'function')
+            return video.webkitExitFullscreen();
+        }
+
+        function toggleFullscreen() {
+          if (isFsActive() || video.webkitDisplayingFullscreen)
+            exitFullscreen();
+          else enterFullscreen();
+        }
+        document.addEventListener('fullscreenchange', function () {
+          setFsAttr(
+            isFsActive());
+        });
+        document.addEventListener('webkitfullscreenchange', function () {
+          setFsAttr(
+            isFsActive());
+        });
+        video.addEventListener('webkitbeginfullscreen', function () { setFsAttr(true); });
+        video.addEventListener('webkitendfullscreen', function () { setFsAttr(false); });
+        // Controls (delegated)
+        player.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-player-control]');
+          if (!btn || !player.contains(btn)) return;
+          var type = btn.getAttribute('data-player-control');
+          if (type === 'play' || type === 'pause' || type === 'playpause') togglePlay();
+          else if (type === 'mute') toggleMute();
+          else if (type === 'fullscreen') toggleFullscreen();
+          else if (type === 'speed') cycleSpeed();
+        });
+        // Time text (not in rAF)
+        function updateTimeTexts() {
+          if (timeDurationEls.length) setText(timeDurationEls, formatTime(video.duration));
+          if (timeProgressEls.length) setText(timeProgressEls, formatTime(video.currentTime));
+        }
+        video.addEventListener('timeupdate', updateTimeTexts);
+        video.addEventListener('loadedmetadata', function () {
+          updateTimeTexts();
+          maybeSetRatioFromVideo(player, updateSize, video);
+        });
+        video.addEventListener('loadeddata', function () {
+          maybeSetRatioFromVideo(player,
+            updateSize, video);
+        });
+        video.addEventListener('playing', function () {
+          maybeSetRatioFromVideo(player, updateSize,
+            video);
+        });
+        video.addEventListener('durationchange', updateTimeTexts);
+        // Check if video has finished and show finish link block
+        function checkVideoFinished() {
+          if (finishLinkBlock && video.duration > 0) {
+            // Check if current time is at or very close to duration (within 0.5 seconds)
+            if (video.currentTime >= video.duration - 0.5) {
+              // Smooth fade in with GSAP after a small delay
+              gsap.to(finishLinkBlock, {
+                display: 'flex',
+                opacity: 1,
+                duration: 0.5,
+                delay: 0.3,
+                ease: 'power2.out'
+              });
+            }
+          }
+        }
+        // Listen for timeupdate to check if video finished
+        video.addEventListener('timeupdate', checkVideoFinished);
+        // Also show on 'ended' event for reliability
+        video.addEventListener('ended', function () {
+          if (finishLinkBlock) {
+            // Smooth fade in with GSAP after a small delay
+            gsap.to(finishLinkBlock, {
+              display: 'flex',
+              opacity: 1,
+              duration: 0.5,
+              delay: 0.3,
+              ease: 'power2.out'
+            });
+          }
+        });
+        // Hide finish link block when video starts playing again
+        video.addEventListener('play', function () {
+          if (finishLinkBlock && video.currentTime < video.duration - 0.5) {
+            gsap.to(finishLinkBlock, {
+              opacity: 0,
+              duration: 0.3,
+              ease: 'power2.in',
+              onComplete: function () {
+                finishLinkBlock.style.display = 'none';
+              }
+            });
+          }
+        });
+        // rAF visuals (progress + handle only)
+        var rafId;
+
+        function updateProgressVisuals() {
+          if (!video.duration) return;
+          var playedPct = (video.currentTime / video.duration) * 100;
+          if (progressBar) progressBar.style.transform = 'translateX(' + (-100 + playedPct) +
+            '%)';
+          if (handle) handle.style.left = playedPct + '%';
+        }
+
+        function loop() {
+          updateProgressVisuals();
+          if (!video.paused && !video.ended) rafId = requestAnimationFrame(loop);
+        }
+        // Buffered bar (not in rAF)
+        function updateBufferedBar() {
+          if (!bufferedBar || !video.duration || !video.buffered.length) return;
+          var end = video.buffered.end(video.buffered.length - 1);
+          var buffPct = (end / video.duration) * 100;
+          bufferedBar.style.transform = 'translateX(' + (-100 + buffPct) + '%)';
+        }
+        video.addEventListener('progress', updateBufferedBar);
+        video.addEventListener('loadedmetadata', updateBufferedBar);
+        video.addEventListener('durationchange', updateBufferedBar);
+        // Media event wiring
+        video.addEventListener('play', function () {
+          setActivated(true);
+          cancelAnimationFrame(rafId);
+          loop();
+          setStatus('playing');
+        });
+        video.addEventListener('playing', function () {
+          pendingPlay = false;
+          setStatus('playing');
+        });
+        video.addEventListener('pause', function () {
+          pendingPlay = false;
+          cancelAnimationFrame(rafId);
+          updateProgressVisuals();
+          setStatus('paused');
+        });
+        video.addEventListener('waiting', function () { setStatus('loading'); });
+        video.addEventListener('canplay', function () { readyIfIdle(player, pendingPlay); });
+        video.addEventListener('canplay', applySpeed);
+        video.addEventListener('ended', function () {
+          pendingPlay = false;
+          cancelAnimationFrame(rafId);
+          updateProgressVisuals();
+          setStatus('paused');
+          setActivated(false);
+        });
+        // Scrubbing (pointer events)
+        if (timeline) {
+          var dragging = false,
+            wasPlaying = false,
+            targetTime = 0,
+            lastSeekTs = 0,
+            seekThrottle = 180,
+            rect = null;
+          window.addEventListener('resize', function () { if (!dragging) rect = null; });
+
+          function getFractionFromX(x) {
+            if (!rect) rect = timeline.getBoundingClientRect();
+            var f = (x - rect.left) / rect.width;
+            if (f < 0) f = 0;
+            if (f > 1) f = 1;
+            return f;
+          }
+
+          function previewAtFraction(f) {
+            if (!video.duration) return;
+            var pct = f * 100;
+            if (progressBar) progressBar.style.transform = 'translateX(' + (-100 + pct) +
+              '%)';
+            if (handle) handle.style.left = pct + '%';
+            if (timeProgressEls.length) setText(timeProgressEls, formatTime(f * video
+              .duration));
+          }
+
+          function maybeSeek(now) {
+            if (!video.duration) return;
+            if ((now - lastSeekTs) < seekThrottle) return;
+            lastSeekTs = now;
+            video.currentTime = targetTime;
+          }
+
+          function onPointerDown(e) {
+            if (!video.duration) return;
+            // If video has ended, auto-play on timeline click
+            var videoHasEnded = video.ended;
+            dragging = true;
+            wasPlaying = !video.paused && !video.ended;
+            if (wasPlaying) video.pause();
+            player.setAttribute('data-timeline-drag', 'true');
+            rect = timeline.getBoundingClientRect();
+            var f = getFractionFromX(e.clientX);
+            targetTime = f * video.duration;
+            previewAtFraction(f);
+            maybeSeek(performance.now());
+            timeline.setPointerCapture && timeline.setPointerCapture(e.pointerId);
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerUp, { passive: true });
+            // Store if video was ended when drag started
+            timeline._videoWasEnded = videoHasEnded;
+            e.preventDefault();
+          }
+
+          function onPointerMove(e) {
+            if (!dragging) return;
+            var f = getFractionFromX(e.clientX);
+            targetTime = f * video.duration;
+            previewAtFraction(f);
+            maybeSeek(performance.now());
+            e.preventDefault();
+          }
+
+          function onPointerUp() {
+            if (!dragging) return;
+            var shouldAutoPlay = timeline._videoWasEnded;
+            dragging = false;
+            player.setAttribute('data-timeline-drag', 'false');
+            rect = null;
+            video.currentTime = targetTime;
+            // Auto-play if video was ended when drag started
+            if (shouldAutoPlay) {
+              safePlay(video);
+            } else if (wasPlaying) {
+              safePlay(video);
+            } else {
+              updateProgressVisuals();
+              updateTimeTexts();
+            }
+            timeline._videoWasEnded = false;
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+          }
+          timeline.addEventListener('pointerdown', onPointerDown, { passive: false });
+          if (handle) handle.addEventListener('pointerdown',
+            onPointerDown, { passive: false });
+        }
+        // Hover/idle detection (pointer-based)
+        var hoverTimer;
+        var hoverHideDelay = 3000;
+
+        function setHover(state) {
+          if (player.getAttribute('data-player-hover') !== state) {
+            player.setAttribute('data-player-hover', state);
+          }
+        }
+
+        function scheduleHide() {
+          clearTimeout(hoverTimer);
+          hoverTimer = setTimeout(function () { setHover('idle'); }, hoverHideDelay);
+        }
+
+        function wakeControls() {
+          setHover('active');
+          scheduleHide();
+        }
+        player.addEventListener('pointerdown', wakeControls);
+        document.addEventListener('fullscreenchange', wakeControls);
+        document.addEventListener('webkitfullscreenchange', wakeControls);
+        var trackingMove = false;
+
+        function onPointerMoveGlobal(e) {
+          var r = player.getBoundingClientRect();
+          if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e
+            .clientY <= r
+            .bottom) wakeControls();
+        }
+        player.addEventListener('pointerenter', function () {
+          wakeControls();
+          if (!trackingMove) {
+            trackingMove = true;
+            window.addEventListener('pointermove',
+              onPointerMoveGlobal, { passive: true });
+          }
+        });
+        player.addEventListener('pointerleave', function () {
+          setHover('idle');
+          clearTimeout(hoverTimer);
+          if (trackingMove) {
+            trackingMove = false;
+            window.removeEventListener('pointermove', onPointerMoveGlobal);
+          }
+        });
+        // In-view auto play/pause (only when autoplay is true)
+        if (autoplay) {
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              var inView = entry.isIntersecting && entry.intersectionRatio > 0;
+              if (inView) {
+                if ((isLazyTrue || isLazyMeta) && !isAttached) attachMediaOnce();
+                if ((lastPauseBy === 'io') || (video.paused && lastPauseBy !==
+                    'manual')) {
+                  setStatus('loading');
+                  if (video.paused) togglePlay();
+                  lastPauseBy = '';
+                }
+              } else {
+                if (!video.paused && !video.ended) {
+                  lastPauseBy = 'io';
+                  video.pause();
+                }
+              }
+            });
+          }, { threshold: 0.1 });
+          io.observe(player);
+        }
+      });
+      // Helper: time/text/meta/ratio utilities
+      function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+      function formatTime(sec) {
+        if (!isFinite(sec) || sec < 0) return '00:00';
+        var s = Math.floor(sec),
+          h = Math.floor(s / 3600),
+          m = Math.floor((s % 3600) / 60),
+          r = s % 60;
+        return h > 0 ? (h + ':' + pad2(m) + ':' + pad2(r)) : (pad2(m) + ':' + pad2(r));
+      }
+
+      function setText(nodes, text) { nodes.forEach(function (n) { n.textContent = text; }); }
+      // Helper: Choose best HLS level by resolution --- */
+      function bestLevel(levels) {
+        if (!levels || !levels.length) return null;
+        return levels.reduce(function (a, b) {
+            return ((b.width || 0) > (a.width || 0)) ? b :
+              a;
+          },
+          levels[0]);
+      }
+      // Helper: Safe programmatic play
+      function safePlay(video) {
+        var p = video.play();
+        if (p && typeof p.then === 'function') p.catch(function () {});
+      }
+      // Helper: Ready status guard
+      function readyIfIdle(player, pendingPlay) {
+        if (!pendingPlay &&
+          player.getAttribute('data-player-activated') !== 'true' &&
+          player.getAttribute('data-player-status') === 'idle') {
+          player.setAttribute('data-player-status', 'ready');
+        }
+      }
+      // Helper: Ratio Setter
+      function setBeforeRatio(player, updateSize, w, h) {
+        if (updateSize !== 'true' || !w || !h) return;
+        var before = player.querySelector('[data-player-before]');
+        if (!before) return;
+        before.style.paddingTop = (h / w * 100) + '%';
+      }
+
+      function maybeSetRatioFromVideo(player, updateSize, video) {
+        if (updateSize !== 'true') return;
+        var before = player.querySelector('[data-player-before]');
+        if (!before) return;
+        var hasPad = before.style.paddingTop && before.style.paddingTop !== '0%';
+        if (!hasPad && video.videoWidth && video.videoHeight) {
+          setBeforeRatio(player, updateSize, video.videoWidth, video.videoHeight);
+        }
+      }
+      // Helper: simple URL resolver
+      function resolveUrl(base, rel) {
+        try { return new URL(rel, base).toString(); } catch (_) { return rel; }
+      }
+      // Helper: Unified meta fetch (hls.js or native fetch)
+      function getSourceMeta(src, useHlsJs) {
+        return new Promise(function (resolve) {
+          if (useHlsJs && window.Hls && Hls.isSupported()) {
+            try {
+              var tmp = new Hls();
+              var out = { width: 0, height: 0, duration: NaN };
+              var haveLvls = false,
+                haveDur = false;
+              tmp.on(Hls.Events.MANIFEST_PARSED, function (e, data) {
+                var lvls = (data && data.levels) || tmp.levels || [];
+                var best = bestLevel(lvls);
+                if (best && best.width && best.height) {
+                  out.width = best.width;
+                  out.height = best.height;
+                  haveLvls = true;
+                }
+              });
+              tmp.on(Hls.Events.LEVEL_LOADED, function (e, data) {
+                if (data && data.details && isFinite(data.details.totalduration)) {
+                  out.duration = data.details.totalduration;
+                  haveDur = true;
+                }
+              });
+              tmp.on(Hls.Events.ERROR, function () {
+                try { tmp.destroy(); } catch (_) {}
+                resolve(out);
+              });
+              tmp.on(Hls.Events.LEVEL_LOADED, function () {
+                try { tmp.destroy(); } catch (_) {}
+                resolve(out);
+              });
+              tmp.loadSource(src);
+              return;
+            } catch (_) {
+              resolve({ width: 0, height: 0, duration: NaN });
+              return;
+            }
+          }
+
+          function parseMaster(masterText) {
+            var lines = masterText.split(/\r?\n/);
+            var bestW = 0,
+              bestH = 0,
+              firstMedia = null,
+              lastInf = null;
+            for (var i = 0; i < lines.length; i++) {
+              var line = lines[i];
+              if (line.indexOf('#EXT-X-STREAM-INF:') === 0) {
+                lastInf = line;
+              } else if (lastInf && line && line[0] !== '#') {
+                if (!firstMedia) firstMedia = line.trim();
+                var m = /RESOLUTION=(\d+)x(\d+)/.exec(lastInf);
+                if (m) {
+                  var w = parseInt(m[1], 10),
+                    h = parseInt(m[2], 10);
+                  if (w > bestW) {
+                    bestW = w;
+                    bestH = h;
+                  }
+                }
+                lastInf = null;
+              }
+            }
+            return { bestW: bestW, bestH: bestH, media: firstMedia };
+          }
+
+          function sumDuration(mediaText) {
+            var dur = 0,
+              re = /#EXTINF:([\d.]+)/g,
+              m;
+            while ((m = re.exec(mediaText))) dur += parseFloat(m[1]);
+            return dur;
+          }
+          fetch(src, { credentials: 'omit', cache: 'no-store' }).then(function (r) {
+            if (!r.ok) throw new Error('master');
+            return r.text();
+          }).then(function (master) {
+            var info = parseMaster(master);
+            if (!info.media) {
+              resolve({
+                width: info.bestW || 0,
+                height: info.bestH || 0,
+                duration: NaN
+              });
+              return;
+            }
+            var mediaUrl = resolveUrl(src, info.media);
+            return fetch(mediaUrl, { credentials: 'omit', cache: 'no-store' }).then(
+              function (
+                r) {
+                if (!r.ok) throw new Error('media');
+                return r.text();
+              }).then(function (mediaText) {
+              resolve({
+                width: info.bestW || 0,
+                height: info.bestH || 0,
+                duration: sumDuration(mediaText)
+              });
+            });
+          }).catch(function () { resolve({ width: 0, height: 0, duration: NaN }); });
+        });
+      }
+    }
+    initBunnyPlayer();
+
+    // ONBOARDING
+    (function () {
+      const overlay = document.querySelector(".onboarding-overlay");
+      const panel = overlay?.querySelector(".transition-panel");
+      const capTop = overlay?.querySelector(".panel-cap-top");
+      const capBottom = overlay?.querySelector(".panel-cap-bottom");
+      const form = overlay?.querySelector(".onboarding-form");
+      const formEl = overlay?.querySelector("form");
+      const submitBtn = formEl?.querySelector("[data-submit]");
+      if (!overlay || !panel) return console.warn("onboarding: missing element");
+
+      const CAP_START = 1;
+      const CAP_END = 0.35;
+      const DURATION = 1.4;
+      const HOOK = "https://hook.eu1.make.com/qhe2n9ssb9vogd73tssm6zg71wwyphc2";
+
+      let submitting = false;
+
+      function pauseAllVideos() {
+        document.querySelectorAll("video").forEach(v => {
+          try { v.pause(); } catch (_) {}
+        });
+      }
+
+      function coverIn() {
+        pauseAllVideos();
+        gsap.set(panel, { yPercent: 0, y: "30vw" });
+        gsap.set(capTop, { scaleY: CAP_START });
+        gsap.set(capBottom, { scaleY: 1 });
+        gsap.set(form, { autoAlpha: 0, y: 20 });
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden";
+        return gsap.timeline()
+          .to(panel, { yPercent: -100, y: 0, duration: DURATION, ease: "power2.inOut" }, 0)
+          .to(capTop, { scaleY: CAP_END, duration: DURATION, ease: "none" }, 0)
+          .to(form, { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" }, DURATION * 0.75);
+      }
+
+      function coverOut() {
+        return gsap.timeline({
+            onComplete: () => {
+              overlay.style.display = "none";
+              document.body.style.overflow = "";
+            }
+          })
+          .to(form, { autoAlpha: 0, y: -20, duration: 0.4, ease: "power2.in" }, 0)
+          .to(panel, { yPercent: -200, y: "-25vw", duration: DURATION, ease: "power2.inOut" }, 0.4)
+          .to(capBottom, { scaleY: 0.35, duration: DURATION, ease: "none" }, 0.4);
+      }
+
+      function isFormValid() {
+        const name = formEl.querySelector('[name="name"]')?.value.trim() || "";
+        const problems = formEl.querySelectorAll('[name="problems"]:checked').length;
+        const planning = formEl.querySelectorAll('[name="planning"]:checked').length;
+        const nudge = formEl.querySelectorAll('[name="Nudge"]:checked').length;
+        return name.length >= 2 && problems >= 1 && planning >= 1 && nudge >= 1;
+      }
+
+      function readAnswers() {
+        const problems = [...formEl.querySelectorAll('[name="problems"]:checked')]
+          .map(i => i.closest(".radiocheck-field")?.textContent.trim() || i.value);
+        const getChecked = (n) => [...formEl.querySelectorAll(`[name="${n}"]:checked`)].map(i => i
+          .value);
+        return {
+          firstName: formEl.querySelector('[name="name"]')?.value.trim() || "",
+          problems: problems.join(", "),
+          planning: getChecked("planning")[0] || "",
+          nudge: getChecked("Nudge")[0] || "",
+        };
+      }
+
+      async function save(data) {
+        const res = await window.$memberstackDom.updateMember({
+          customFields: {
+            "first-name": data.firstName,
+            "onboarded": "true",
+            "problems": data.problems,
+            "planning": data.planning,
+            "nudge": data.nudge
+          }
+        });
+
+        const member = res?.data || {};
+
+        document.querySelectorAll('[data-ms-content="first-name"], [data-ms-member="first-name"]')
+          .forEach(el => { el.textContent = data.firstName; });
+
+        try {
+          await fetch(HOOK, {
+            method: "POST",
+            body: new URLSearchParams({
+              formType: "onboarding",
+              memberId: member.id || "",
+              email: member.auth?.email || "",
+              firstName: data.firstName,
+              problems: data.problems,
+              planning: data.planning,
+              nudge: data.nudge
+            })
+          });
+        } catch (err) {
+          console.error("onboarding webhook failed", err);
+        }
+      }
+
+      submitBtn?.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (submitting) return;
+        submitting = true;
+
+        await new Promise(r => setTimeout(r, 0));
+
+        if (!isFormValid()) {
+          submitting = false;
+          return;
+        }
+
+        const data = readAnswers();
+        coverOut();
+        try {
+          await save(data);
+        } catch (err) {
+          console.error("onboarding save failed", err);
+          submitting = false;
+        }
+      });
+
+      async function gate() {
+        try {
+          for (let i = 0; i < 50 && !window.$memberstackDom; i++) {
+            await new Promise(r => setTimeout(r, 100));
+          }
+          if (!window.$memberstackDom) return console.warn("onboarding: memberstack never loaded");
+
+          const member = await window.$memberstackDom.getCurrentMember();
+          const fields = member?.data?.customFields || {};
+
+          if (fields["onboarded"] !== "true") {
+            setTimeout(coverIn, 200);
+          }
+        } catch (err) {
+          console.error("onboarding gate failed", err);
+        }
+      }
+
+      document.querySelector("[test-button]")?.addEventListener("click", coverIn);
+      gate();
+      window.dfsOnboarding = { coverIn, coverOut };
+    })();
+  }
+
+  // =========================================================
+  // DASHBOARD — /dashboard
+  // (was Slater dash_board.js)
+  // =========================================================
+  function dfsDashboard() {
+    // DASHBOARD - Load progress for all courses
+    async function loadDashboardProgress() {
+      try {
+        const memberData = await window.$memberstackDom.getMemberJSON();
+        console.log('=== LOADING DASHBOARD PROGRESS ===');
+        console.log('Member data:', memberData);
+
+        if (memberData && memberData.data && memberData.data.courses) {
+          const courses = memberData.data.courses;
+          console.log('Found courses:', Object.keys(courses));
+
+          // Update progress for courses that have saved data
+          Object.keys(courses).forEach(courseName => {
+            const courseData = courses[courseName];
+            if (!courseData.lessons) return;
+
+            const lessons = courseData.lessons;
+            const completed = lessons.filter(l => l.complete).length;
+            const total = lessons.length;
+            const percent = Math.round((completed / total) * 100);
+
+            console.log(`${courseName}: ${completed}/${total} = ${percent}%`);
+
+            // Animate progress bar with GSAP
+            const progressBar = document.querySelector(`[progress_bar="${courseName}"]`);
+            if (progressBar) {
+              gsap.to(progressBar, {
+                width: percent + '%',
+                duration: 1.5,
+                ease: 'power2.out'
+              });
+            }
+
+            // Animate number wheels
+            animateProgressNumbers(courseName, percent);
+          });
+
+          console.log('=================================');
+        } else {
+          console.log('No course data found');
+          console.log('=================================');
+        }
+      } catch (error) {
+        console.error('Error loading dashboard progress:', error);
+      }
+    }
+
+    // Animate the rolling number wheels
+    function animateProgressNumbers(courseName, percent) {
+      const container = document.querySelector(`[data-progress-numbers="${courseName}"]`);
+      if (!container) return;
+
+      const firstWrap = container.querySelector(
+        '.loading__number-group.is--first .loading__number-wrap');
+      const secondWrap = container.querySelector(
+        '.loading__number-group.is--second .loading__number-wrap');
+      const thirdWrap = container.querySelector(
+        '.loading__number-group.is--third .loading__number-wrap');
+
+      // Calculate digit positions
+      let firstIndex, secondIndex, thirdIndex;
+
+      if (percent === 100) {
+        // 100% → show "1", "0", "0"
+        firstIndex = 1; // "1" is at index 1
+        secondIndex = 10; // final "0" is at index 10
+        thirdIndex = 10; // final "0" is at index 10
+      } else if (percent >= 10) {
+        // 10-99% → empty, tens digit, ones digit
+        const tens = Math.floor(percent / 10);
+        const ones = percent % 10;
+        firstIndex = 0; // empty
+        secondIndex = tens; // 1-9 are at index 1-9
+        thirdIndex = ones; // 0-9 are at index 0-9
+      } else {
+        // 0-9% → empty, empty, ones digit
+        firstIndex = 0; // empty
+        secondIndex = 0; // empty
+        thirdIndex = percent; // 0-9 are at index 0-9
+      }
+
+      // Animate each wheel
+      // First group has 2 items, so each step = 50%
+      // Second group has 11 items, so each step = 100/11 ≈ 9.09%
+      // Third group has 11 items, so each step = 100/11 ≈ 9.09%
+      const duration = 1.5;
+      const ease = 'power2.out';
+
+      if (firstWrap) {
+        gsap.to(firstWrap, {
+          yPercent: firstIndex * -50, // 2 items: 100/2 = 50% per step
+          duration: duration,
+          ease: ease
+        });
+      }
+
+      if (secondWrap) {
+        gsap.to(secondWrap, {
+          yPercent: secondIndex * -(100 / 11), // 11 items
+          duration: duration,
+          ease: ease
+        });
+      }
+
+      if (thirdWrap) {
+        gsap.to(thirdWrap, {
+          yPercent: thirdIndex * -(100 / 11), // 11 items
+          duration: duration,
+          ease: ease
+        });
+      }
+    }
+
+    // Run when page loads
+    loadDashboardProgress();
+
+    // CARD HOVER ANIMATIONS (your existing code)
+    const cards = document.querySelectorAll('[course_card]');
+    cards.forEach(card => {
+      const topPart = card.querySelector('[top-card]');
+      const button = card.querySelector('[cc_btn]');
+      const arrowBox = card.querySelector('[cc_arwbox]');
+      const arrowIcon = card.querySelector('.cr_arrow');
+      if (!arrowBox) return;
+
+      // Create the Timeline
+      const tl = gsap.timeline({ paused: true });
+
+      // 1. Animate the Box: Background and Border
+      tl.to(arrowBox, {
+        backgroundColor: "#EDF5F9",
+        duration: 0.4,
+        ease: "power2.out"
+      }, 0);
+
+      // 2. Animate the Arrow: Color and Juggle
+      if (arrowIcon) {
+        tl.to(arrowIcon, {
+          color: "#0297DB",
+          rotation: -45,
+          transformOrigin: "50% 50%",
+          duration: 0.4,
+          ease: "back.out(2)",
+        }, 0);
+      }
+
+      // Hover Functions
+      const playAnim = () => tl.play();
+      const reverseAnim = () => tl.reverse();
+
+      // Listeners
+      if (topPart) {
+        topPart.addEventListener('mouseenter', playAnim);
+        topPart.addEventListener('mouseleave', reverseAnim);
+        topPart.style.cursor = 'pointer';
+      }
+      if (button) {
+        button.addEventListener('mouseenter', playAnim);
+        button.addEventListener('mouseleave', reverseAnim);
+      }
+    });
+
+    // TAB SWITCHING FUNCTIONALITY
+    // TAB SWITCHING FUNCTIONALITY
+    // TAB SWITCHING FUNCTIONALITY
+    // TAB SWITCHING FUNCTIONALITY
+    function initDashboardTabs() {
+      // Define your tabs
+      const tabs = {
+        'Courses': 'courses',
+        'my account': 'accountd',
+        'Orders': 'orders',
+        'tools': 'tools'
+      };
+      // Set initial state - show courses, hide everything else
+      document.getElementById('courses').style.display = 'flex';
+      document.getElementById('accountd').style.display = 'none';
+      document.getElementById('orders').style.display = 'none';
+      document.getElementById('tools').style.display = 'none';
+
+      // Get all menu items
+      const menuItems = document.querySelectorAll('.menu_item');
+
+      menuItems.forEach(item => {
+        item.addEventListener('click', function (e) {
+          e.preventDefault();
+
+          const tabName = this.querySelector('.menu_txt').textContent.trim();
+          const targetId = tabs[tabName];
+
+          // If this tab isn't set up yet, ignore
+          if (!targetId) return;
+
+          // Remove is-active from all menu items
+          menuItems.forEach(mi => mi.classList.remove('is-active'));
+
+          // Add is-active to clicked item
+          this.classList.add('is-active');
+
+          // Hide all tab content
+          Object.values(tabs).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+          });
+
+          // Show the target tab
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.style.display = 'flex';
+
+            // Re-run animations if switching to courses
+            if (targetId === 'courses') {
+              loadDashboardProgress();
+            }
+          }
+        });
+      });
+    }
+
+    // Initialize tabs when DOM is ready
+    initDashboardTabs();
+  }
+
+  // =========================================================
+  // FEEDBACK — /feedback + course-completion form
+  // (was Slater FEEDBACK.js)
+  // =========================================================
+  function dfsFeedback() {
+    // DFS · Feedback page — NPS branching + form validation
+    // Page-local copy. The global form-validation script must NOT load on this page.
+    //
+    // Attributes:
+    //   data-form-validate      on the form wrapper (once)
+    //   data-validate           on every form-field-group
+    //   data-radiocheck-group   on the radio/checkbox group inside a field group
+    //   data-nps-group          on the 1–10 scale's radio group
+    //   data-nps-branch         "promoter" | "passive" | "detractor" (comma-separated ok)
+    //   data-nps-min / -max     custom range instead of a named branch
+    //   data-nps-display        override the default display mode for one element
+
+    (function () {
+
+      /* ---------------------------------------------------------------
+         1. NPS BRANCHING
+         --------------------------------------------------------------- */
+
+      var DISPLAY_MODE = 'flex'; // default; override per element with data-nps-display
+      var DURATION = 650; // ms — baseline for a ~400px tall branch
+      var EASING = 'cubic-bezier(0.33, 0, 0.2, 1)';
+      var SLIDE = 12; // px the content lifts from
+
+      var RANGES = {
+        promoter: [8, 10],
+        passive: [6, 7],
+        detractor: [1, 5]
+      };
+
+      var reduceMotion = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Lenis caches the document height, so it has to be told when the page
+      // grows or shrinks — otherwise you can't scroll to newly revealed content.
+      function refreshScroll() {
+        var l = window.lenis || window.Lenis || window.smoothScroll ||
+          (window.dfs && window.dfs.lenis);
+
+        if (l && typeof l.resize === 'function') {
+          l.resize();
+          return;
+        }
+
+        // Fallback: a resize event makes most smooth-scroll libraries remeasure.
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      function initNpsBranching() {
+        var group = document.querySelector('[data-nps-group]');
+        if (!group) return;
+
+        var branches = Array.prototype.slice.call(
+          document.querySelectorAll('[data-nps-branch], [data-nps-min], [data-nps-max]')
+        );
+        if (!branches.length) return;
+
+        branches.forEach(function (el) {
+          var min = el.getAttribute('data-nps-min');
+          var max = el.getAttribute('data-nps-max');
+
+          if (min !== null || max !== null) {
+            el._npsRanges = [
+              [
+                min !== null ? parseInt(min, 10) : 0,
+                max !== null ? parseInt(max, 10) : 10
+              ]
+            ];
+          } else {
+            el._npsRanges = (el.getAttribute('data-nps-branch') || '')
+              .split(',')
+              .map(function (name) { return RANGES[name.trim()]; })
+              .filter(Boolean);
+          }
+
+          el._npsMode = el.getAttribute('data-nps-display') || DISPLAY_MODE;
+          el._npsOpen = false;
+          el.style.display = 'none';
+        });
+
+        function clearTimer(el) {
+          if (el._npsTimer) {
+            clearTimeout(el._npsTimer);
+            el._npsTimer = null;
+          }
+          if (el._npsEnd) {
+            el.removeEventListener('transitionend', el._npsEnd);
+            el._npsEnd = null;
+          }
+          if (el._npsTick) {
+            cancelAnimationFrame(el._npsTick);
+            el._npsTick = null;
+          }
+        }
+
+        function resetStyles(el) {
+          el.style.transition = '';
+          el.style.height = '';
+          el.style.opacity = '';
+          el.style.transform = '';
+          el.style.overflow = '';
+        }
+
+        // Duration scales with distance so tall and short branches feel the same.
+        function durationFor(px) {
+          var d = DURATION * Math.sqrt(px / 400);
+          return Math.max(400, Math.min(1100, d));
+        }
+
+        // Keep the scroll length in sync while the height is actually changing.
+        function trackWhileAnimating(el, ms) {
+          var start = Date.now();
+
+          function tick() {
+            refreshScroll();
+            if (Date.now() - start < ms + 100) {
+              el._npsTick = requestAnimationFrame(tick);
+            } else {
+              el._npsTick = null;
+            }
+          }
+
+          el._npsTick = requestAnimationFrame(tick);
+        }
+
+        // Cleanup runs once — on transitionend, or on the fallback timer.
+        function onSettled(el, ms, fn) {
+          var done = false;
+
+          function finish(e) {
+            if (e && e.target !== el) return; // ignore children
+            if (e && e.propertyName !== 'height') return; // only the height tween
+            if (done) return;
+            done = true;
+            clearTimer(el);
+            fn();
+            refreshScroll();
+          }
+
+          el._npsEnd = finish;
+          el.addEventListener('transitionend', finish);
+          el._npsTimer = setTimeout(function () { finish(null); }, ms + 80);
+        }
+
+        function openBranch(el) {
+          clearTimer(el);
+          el.style.display = el._npsMode;
+
+          if (reduceMotion) {
+            resetStyles(el);
+            refreshScroll();
+            return;
+          }
+
+          // Fade-only elements (the submit button) skip the height tween.
+          if (el.hasAttribute('data-nps-fade')) {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(' + SLIDE + 'px)';
+            void el.offsetHeight;
+            el.style.transition = 'opacity 400ms ' + EASING +
+              ', transform 400ms ' + EASING;
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+            refreshScroll();
+            return;
+          }
+
+          resetStyles(el);
+
+          // Force layout before measuring, so the first open gets a real height.
+          void el.offsetHeight;
+          var target = el.scrollHeight;
+          var ms = durationFor(target);
+
+          el.style.overflow = 'hidden';
+          el.style.height = '0px';
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(' + SLIDE + 'px)';
+
+          void el.offsetHeight;
+
+          el.style.transition = 'height ' + ms + 'ms ' + EASING +
+            ', opacity ' + ms + 'ms ' + EASING +
+            ', transform ' + ms + 'ms ' + EASING;
+          el.style.height = target + 'px';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+
+          trackWhileAnimating(el, ms);
+
+          onSettled(el, ms, function () {
+            resetStyles(el);
+          });
+        }
+
+        function closeBranch(el, instant) {
+          clearTimer(el);
+
+          if (reduceMotion || instant) {
+            resetStyles(el);
+            el.style.display = 'none';
+            refreshScroll();
+            return;
+          }
+
+          if (el.hasAttribute('data-nps-fade')) {
+            resetStyles(el);
+            el.style.display = 'none';
+            refreshScroll();
+            return;
+          }
+
+          var start = el.scrollHeight;
+          var ms = durationFor(start);
+
+          el.style.overflow = 'hidden';
+          el.style.height = start + 'px';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+
+          void el.offsetHeight;
+
+          el.style.transition = 'height ' + ms + 'ms ' + EASING +
+            ', opacity ' + ms + 'ms ' + EASING +
+            ', transform ' + ms + 'ms ' + EASING;
+          el.style.height = '0px';
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(' + SLIDE + 'px)';
+
+          trackWhileAnimating(el, ms);
+
+          onSettled(el, ms, function () {
+            resetStyles(el);
+            el.style.display = 'none';
+          });
+        }
+
+        function setBranch(el, open) {
+          if (el._npsOpen === open) return;
+          el._npsOpen = open;
+
+          if (open) {
+            openBranch(el);
+          } else {
+            closeBranch(el);
+
+            var groups = el.querySelectorAll('[data-validate]');
+            Array.prototype.forEach.call(groups, function (g) {
+              g.classList.remove('is--error', 'is--success', 'is--filled');
+            });
+          }
+        }
+
+        function getScore() {
+          var checked = group.querySelector('input[type="radio"]:checked');
+          if (!checked) return null;
+
+          var raw = checked.value || '';
+          var n = parseInt(String(raw).replace(/[^0-9-]/g, ''), 10);
+          return isNaN(n) ? null : n;
+        }
+
+        function update() {
+          var score = getScore();
+
+          branches.forEach(function (el) {
+            var hit = score !== null && el._npsRanges.some(function (r) {
+              return score >= r[0] && score <= r[1];
+            });
+
+            setBranch(el, hit);
+          });
+        }
+
+        group.addEventListener('change', update);
+        group.addEventListener('click', function () { setTimeout(update, 0); });
+
+        update();
+      }
+
+      /* ---------------------------------------------------------------
+         2. FORM VALIDATION
+         Local copy. Changes from the global version:
+           · hidden field groups are skipped, so closed branches don't block submit
+           · validateAll is exposed on the form element as __dfsValidate, so the
+             overlay script can call it directly instead of firing a submit event
+         --------------------------------------------------------------- */
+
+      var SPAM_THRESHOLD = 3000; // ms since load before a submit is accepted
+
+      function initFormValidation() {
+        var forms = document.querySelectorAll('[data-form-validate]');
+
+        Array.prototype.forEach.call(forms, function (formContainer) {
+          if (formContainer.__validationInitialized) return;
+          formContainer.__validationInitialized = true;
+
+          var form = formContainer.querySelector('form');
+          if (!form) return;
+
+          var startTime = new Date().getTime();
+          var validateFields = form.querySelectorAll('[data-validate]');
+          var realSubmitInput = form.querySelector('input[type="submit"]');
+          if (!realSubmitInput) return;
+
+          function isSpam() {
+            return (new Date().getTime() - startTime) < SPAM_THRESHOLD;
+          }
+
+          // Skip anything inside a closed branch.
+          function isHidden(el) {
+            return !el.offsetParent && getComputedStyle(el).position !== 'fixed';
+          }
+
+          // Disable select options with invalid values on page load.
+          Array.prototype.forEach.call(validateFields, function (fieldGroup) {
+            var select = fieldGroup.querySelector('select');
+            if (!select) return;
+
+            Array.prototype.forEach.call(select.querySelectorAll('option'), function (
+              option) {
+              if (option.value === '' || option.value === 'disabled' ||
+                option.value === 'null' || option.value === 'false') {
+                option.setAttribute('disabled', 'disabled');
+              }
+            });
+          });
+
+          function isValid(fieldGroup) {
+            var radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+
+            if (radioCheckGroup) {
+              var inputs = radioCheckGroup.querySelectorAll(
+                'input[type="radio"], input[type="checkbox"]');
+              var checkedInputs = radioCheckGroup.querySelectorAll('input:checked');
+              var gMin = parseInt(radioCheckGroup.getAttribute('min'), 10) || 1;
+              var gMax = parseInt(radioCheckGroup.getAttribute('max'), 10) || inputs.length;
+
+              if (!inputs.length) return true;
+
+              if (inputs[0].type === 'radio') {
+                return checkedInputs.length >= 1;
+              }
+              if (inputs.length === 1) {
+                return inputs[0].checked;
+              }
+              return checkedInputs.length >= gMin && checkedInputs.length <= gMax;
+            }
+
+            var input = fieldGroup.querySelector('input, textarea, select');
+            if (!input) return false;
+
+            var value = input.value.trim();
+            var length = value.length;
+            var min = parseInt(input.getAttribute('min'), 10) || 0;
+            var max = parseInt(input.getAttribute('max'), 10) || Infinity;
+            var valid = true;
+
+            if (input.tagName.toLowerCase() === 'select') {
+              if (value === '' || value === 'disabled' ||
+                value === 'null' || value === 'false') {
+                valid = false;
+              }
+            } else if (input.type === 'email') {
+              valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            } else {
+              if (input.hasAttribute('min') && length < min) valid = false;
+              if (input.hasAttribute('max') && length > max) valid = false;
+            }
+
+            return valid;
+          }
+
+          function updateFieldStatus(fieldGroup) {
+            if (isHidden(fieldGroup)) {
+              fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+              return;
+            }
+
+            var radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+            var valid = isValid(fieldGroup);
+
+            if (radioCheckGroup) {
+              var inputs = radioCheckGroup.querySelectorAll(
+                'input[type="radio"], input[type="checkbox"]');
+              var checkedInputs = radioCheckGroup.querySelectorAll('input:checked');
+
+              fieldGroup.classList.toggle('is--filled', checkedInputs.length > 0);
+
+              if (valid) {
+                fieldGroup.classList.add('is--success');
+                fieldGroup.classList.remove('is--error');
+              } else {
+                fieldGroup.classList.remove('is--success');
+                var started = Array.prototype.some.call(inputs, function (i) {
+                  return i.__validationStarted;
+                });
+                fieldGroup.classList.toggle('is--error', started);
+              }
+              return;
+            }
+
+            var input = fieldGroup.querySelector('input, textarea, select');
+            if (!input) return;
+
+            fieldGroup.classList.toggle('is--filled', !!input.value.trim());
+
+            if (valid) {
+              fieldGroup.classList.add('is--success');
+              fieldGroup.classList.remove('is--error');
+            } else {
+              fieldGroup.classList.remove('is--success');
+              fieldGroup.classList.toggle('is--error', !!input.__validationStarted);
+            }
+          }
+
+          function validateAll() {
+            var allValid = true;
+            var firstInvalid = null;
+
+            Array.prototype.forEach.call(validateFields, function (fieldGroup) {
+              if (isHidden(fieldGroup)) {
+                fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+                return;
+              }
+
+              var input = fieldGroup.querySelector('input, textarea, select');
+              var radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+              if (!input && !radioCheckGroup) return;
+
+              if (input) input.__validationStarted = true;
+
+              if (radioCheckGroup) {
+                radioCheckGroup.__validationStarted = true;
+                Array.prototype.forEach.call(
+                  radioCheckGroup.querySelectorAll(
+                    'input[type="radio"], input[type="checkbox"]'),
+                  function (i) { i.__validationStarted = true; }
+                );
+              }
+
+              updateFieldStatus(fieldGroup);
+
+              if (!isValid(fieldGroup)) {
+                allValid = false;
+                if (!firstInvalid) {
+                  firstInvalid = input || radioCheckGroup.querySelector('input');
+                }
+              }
+            });
+
+            if (!allValid && firstInvalid) firstInvalid.focus();
+            return allValid;
+          }
+
+          // Exposed so the overlay script can validate without firing an event.
+          form.__dfsValidate = validateAll;
+          form.__dfsIsSpam = isSpam;
+
+          // Live validation listeners.
+          Array.prototype.forEach.call(validateFields, function (fieldGroup) {
+            var input = fieldGroup.querySelector('input, textarea, select');
+            var radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+
+            if (radioCheckGroup) {
+              var inputs = radioCheckGroup.querySelectorAll(
+                'input[type="radio"], input[type="checkbox"]');
+
+              Array.prototype.forEach.call(inputs, function (i) {
+                i.__validationStarted = false;
+
+                i.addEventListener('change', function () {
+                  requestAnimationFrame(function () {
+                    if (!i.__validationStarted) {
+                      var checkedCount = radioCheckGroup.querySelectorAll(
+                        'input:checked').length;
+                      var gMin = parseInt(radioCheckGroup.getAttribute('min'),
+                        10) || 1;
+                      if (checkedCount >= gMin) i.__validationStarted = true;
+                    }
+                    if (i.__validationStarted) updateFieldStatus(fieldGroup);
+                  });
+                });
+
+                i.addEventListener('blur', function () {
+                  i.__validationStarted = true;
+                  updateFieldStatus(fieldGroup);
+                });
+              });
+
+              return;
+            }
+
+            if (!input) return;
+
+            input.__validationStarted = false;
+
+            if (input.tagName.toLowerCase() === 'select') {
+              input.addEventListener('change', function () {
+                input.__validationStarted = true;
+                updateFieldStatus(fieldGroup);
+              });
+            } else {
+              input.addEventListener('input', function () {
+                var length = input.value.trim().length;
+                var min = parseInt(input.getAttribute('min'), 10) || 0;
+                var max = parseInt(input.getAttribute('max'), 10) || Infinity;
+
+                if (!input.__validationStarted) {
+                  if (input.type === 'email') {
+                    if (isValid(fieldGroup)) input.__validationStarted = true;
+                  } else if ((input.hasAttribute('min') && length >= min) ||
+                    (input.hasAttribute('max') && length <= max)) {
+                    input.__validationStarted = true;
+                  }
+                }
+
+                if (input.__validationStarted) updateFieldStatus(fieldGroup);
+              });
+
+              input.addEventListener('blur', function () {
+                input.__validationStarted = true;
+                updateFieldStatus(fieldGroup);
+              });
+            }
+          });
+
+          // Belt and braces: block any native submit that gets this far.
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          }, true);
+
+          form.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+            }
+          });
+        });
+      }
+
+      /* ---------------------------------------------------------------
+         3. BOOT
+         --------------------------------------------------------------- */
+
+      initNpsBranching();
+      initFormValidation();
+
+    })();
+
+    // DFS · Feedback page — submit overlay + save
+    // Intercepts the submit, validates, slides the panel up, then posts to Make
+    // and flags the member as having given feedback.
+
+    (function () {
+
+      var overlay = document.querySelector('.onboarding-overlay');
+      var panel = overlay && overlay.querySelector('.transition-panel');
+      var capTop = overlay && overlay.querySelector('.panel-cap-top');
+      var capBottom = overlay && overlay.querySelector('.panel-cap-bottom');
+      var content = overlay && overlay.querySelector('.feedback_success');
+
+      var formEl = document.querySelector('[data-form-validate] form');
+      var submitBtn = formEl && formEl.querySelector('input[type="submit"]');
+
+      if (!overlay || !panel || !formEl || !submitBtn) {
+        return console.warn('feedback overlay: missing element');
+      }
+
+      var CAP_START = 1;
+      var CAP_END = 0.35;
+      var DURATION = 1.4;
+      var HOOK = "https://hook.eu1.make.com/qhe2n9ssb9vogd73tssm6zg71wwyphc2";
+
+      var submitting = false;
+
+      function pauseAllVideos() {
+        document.querySelectorAll('video').forEach(function (v) {
+          try { v.pause(); } catch (_) {}
+        });
+      }
+
+      function coverIn() {
+        pauseAllVideos();
+
+        gsap.set(panel, { yPercent: 0, y: '30vw' });
+        gsap.set(capTop, { scaleY: CAP_START });
+        gsap.set(capBottom, { scaleY: 1 });
+        if (content) gsap.set(content, { autoAlpha: 0, y: 20 });
+
+        overlay.style.display = 'block';
+
+        var tl = gsap.timeline()
+          .to(panel, { yPercent: -100, y: 0, duration: DURATION, ease: 'power2.inOut' }, 0)
+          .to(capTop, { scaleY: CAP_END, duration: DURATION, ease: 'none' }, 0);
+
+        if (content) {
+          tl.to(content, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' },
+            DURATION * 0.75);
+        }
+
+        return tl;
+      }
+
+      function readAnswers() {
+        var data = {};
+
+        Array.prototype.forEach.call(
+          formEl.querySelectorAll('input, textarea, select'),
+          function (f) {
+            if (!f.name || f.type === 'submit') return;
+
+            if (f.type === 'checkbox' || f.type === 'radio') {
+              if (!f.checked) return;
+              var label = f.closest('.radiocheck-field');
+              var val = label ? label.textContent.trim() : f.value;
+              data[f.name] = data[f.name] ? data[f.name] + ', ' + val : val;
+              return;
+            }
+
+            var v = f.value.trim();
+            if (v) data[f.name] = v;
+          }
+        );
+
+        return data;
+      }
+
+      // promoter / passive / detractor, derived from the score.
+      function segmentFor(score) {
+        var n = parseInt(score, 10);
+        if (isNaN(n)) return '';
+        if (n >= 8) return 'Promoters 8-10';
+        if (n >= 6) return 'Passives 6-7';
+        return 'Detractors 1-5';
+      }
+
+      async function save(data) {
+        var member = {};
+
+        try {
+          if (window.$memberstackDom) {
+            var res = await window.$memberstackDom.updateMember({
+              customFields: { "feedback-given": "true" }
+            });
+            member = res?.data || {};
+          }
+        } catch (err) {
+          console.error('feedback: memberstack update failed', err);
+        }
+
+        var payload = Object.assign({
+          formType: "feedback",
+          memberId: member.id || "",
+          email: member.auth?.email || "",
+          firstName: member.customFields?.["first-name"] || "",
+          segment: segmentFor(data.scale)
+        }, data);
+
+        try {
+          await fetch(HOOK, {
+            method: "POST",
+            body: new URLSearchParams(payload)
+          });
+        } catch (err) {
+          console.error('feedback webhook failed', err);
+        }
+      }
+
+      submitBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (submitting) return;
+
+        // Call the validator directly — no synthetic submit event, so
+        // Webflow's own handler never hears about this.
+        if (formEl.__dfsValidate && !formEl.__dfsValidate()) return;
+        if (formEl.__dfsIsSpam && formEl.__dfsIsSpam()) return;
+
+        submitting = true;
+
+        var data = readAnswers();
+        coverIn();
+        save(data);
+      }, true);
+
+    })();
+  }
+
+  // =========================================================
+  // FORM VALIDATION — auth pages + course
+  // (was Slater FORM_CODE.js)
+  // =========================================================
+  function dfsFormValidation() {
+    // Advanced form validation — global
+    // Attributes:
+    //   data-form-validate      on the form wrapper
+    //   data-validate           on every field group
+    //   data-radiocheck-group   on the radio/checkbox group inside a field group
+    //   data-submit             on a custom submit trigger (optional)
+
+    function initAdvancedFormValidation() {
+      const SPAM_THRESHOLD = 2000; // ms since load before a submit is accepted
+
+      const forms = document.querySelectorAll('[data-form-validate]');
+
+      forms.forEach((formContainer) => {
+        if (formContainer.__validationInitialized) return;
+        formContainer.__validationInitialized = true;
+
+        const form = formContainer.querySelector('form');
+        if (!form) return;
+
+        const startTime = new Date().getTime();
+        const validateFields = form.querySelectorAll('[data-validate]');
+        const dataSubmit = form.querySelector('[data-submit]');
+        const realSubmitInput = form.querySelector('input[type="submit"]');
+        if (!realSubmitInput) return;
+
+        function isSpam() {
+          const currentTime = new Date().getTime();
+          return currentTime - startTime < SPAM_THRESHOLD;
+        }
+
+        // Disable select options with invalid values on page load
+        validateFields.forEach(function (fieldGroup) {
+          const select = fieldGroup.querySelector('select');
+          if (select) {
+            const options = select.querySelectorAll('option');
+            options.forEach(function (option) {
+              if (
+                option.value === '' ||
+                option.value === 'disabled' ||
+                option.value === 'null' ||
+                option.value === 'false'
+              ) {
+                option.setAttribute('disabled', 'disabled');
+              }
+            });
+          }
+        });
+
+        function validateAndStartLiveValidationForAll() {
+          let allValid = true;
+          let firstInvalidField = null;
+
+          validateFields.forEach(function (fieldGroup) {
+            const input = fieldGroup.querySelector('input, textarea, select');
+            const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+            if (!input && !radioCheckGroup) return;
+
+            if (input) input.__validationStarted = true;
+
+            if (radioCheckGroup) {
+              radioCheckGroup.__validationStarted = true;
+              const inputs = radioCheckGroup.querySelectorAll(
+                'input[type="radio"], input[type="checkbox"]'
+              );
+              inputs.forEach(function (input) {
+                input.__validationStarted = true;
+              });
+            }
+
+            updateFieldStatus(fieldGroup);
+
+            if (!isValid(fieldGroup)) {
+              allValid = false;
+              if (!firstInvalidField) {
+                firstInvalidField = input || radioCheckGroup.querySelector('input');
+              }
+            }
+          });
+
+          if (!allValid && firstInvalidField) {
+            firstInvalidField.focus();
+          }
+
+          return allValid;
+        }
+
+        function isValid(fieldGroup) {
+          const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+
+          if (radioCheckGroup) {
+            const inputs = radioCheckGroup.querySelectorAll(
+              'input[type="radio"], input[type="checkbox"]'
+            );
+            const checkedInputs = radioCheckGroup.querySelectorAll('input:checked');
+            const min = parseInt(radioCheckGroup.getAttribute('min')) || 1;
+            const max = parseInt(radioCheckGroup.getAttribute('max')) || inputs.length;
+            const checkedCount = checkedInputs.length;
+
+            if (!inputs.length) return true;
+
+            if (inputs[0].type === 'radio') {
+              return checkedCount >= 1;
+            } else {
+              if (inputs.length === 1) {
+                return inputs[0].checked;
+              } else {
+                return checkedCount >= min && checkedCount <= max;
+              }
+            }
+          } else {
+            const input = fieldGroup.querySelector('input, textarea, select');
+            if (!input) return false;
+
+            let valid = true;
+            const min = parseInt(input.getAttribute('min')) || 0;
+            const max = parseInt(input.getAttribute('max')) || Infinity;
+            const value = input.value.trim();
+            const length = value.length;
+
+            if (input.tagName.toLowerCase() === 'select') {
+              if (
+                value === '' ||
+                value === 'disabled' ||
+                value === 'null' ||
+                value === 'false'
+              ) {
+                valid = false;
+              }
+            } else if (input.type === 'email') {
+              const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              valid = emailPattern.test(value);
+            } else {
+              if (input.hasAttribute('min') && length < min) valid = false;
+              if (input.hasAttribute('max') && length > max) valid = false;
+            }
+
+            return valid;
+          }
+        }
+
+        function updateFieldStatus(fieldGroup) {
+          const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+
+          if (radioCheckGroup) {
+            const inputs = radioCheckGroup.querySelectorAll(
+              'input[type="radio"], input[type="checkbox"]'
+            );
+            const checkedInputs = radioCheckGroup.querySelectorAll('input:checked');
+
+            if (checkedInputs.length > 0) {
+              fieldGroup.classList.add('is--filled');
+            } else {
+              fieldGroup.classList.remove('is--filled');
+            }
+
+            const valid = isValid(fieldGroup);
+
+            if (valid) {
+              fieldGroup.classList.add('is--success');
+              fieldGroup.classList.remove('is--error');
+            } else {
+              fieldGroup.classList.remove('is--success');
+              const anyInputValidationStarted = Array.from(inputs).some(
+                (input) => input.__validationStarted
+              );
+              if (anyInputValidationStarted) {
+                fieldGroup.classList.add('is--error');
+              } else {
+                fieldGroup.classList.remove('is--error');
+              }
+            }
+          } else {
+            const input = fieldGroup.querySelector('input, textarea, select');
+            if (!input) return;
+
+            const value = input.value.trim();
+
+            if (value) {
+              fieldGroup.classList.add('is--filled');
+            } else {
+              fieldGroup.classList.remove('is--filled');
+            }
+
+            const valid = isValid(fieldGroup);
+
+            if (valid) {
+              fieldGroup.classList.add('is--success');
+              fieldGroup.classList.remove('is--error');
+            } else {
+              fieldGroup.classList.remove('is--success');
+              if (input.__validationStarted) {
+                fieldGroup.classList.add('is--error');
+              } else {
+                fieldGroup.classList.remove('is--error');
+              }
+            }
+          }
+        }
+
+        validateFields.forEach(function (fieldGroup) {
+          const input = fieldGroup.querySelector('input, textarea, select');
+          const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
+
+          if (radioCheckGroup) {
+            const inputs = radioCheckGroup.querySelectorAll(
+              'input[type="radio"], input[type="checkbox"]'
+            );
+
+            inputs.forEach(function (input) {
+              input.__validationStarted = false;
+
+              input.addEventListener('change', function () {
+                requestAnimationFrame(function () {
+                  if (!input.__validationStarted) {
+                    const checkedCount = radioCheckGroup.querySelectorAll(
+                      'input:checked'
+                    ).length;
+                    const min = parseInt(radioCheckGroup.getAttribute('min')) || 1;
+                    if (checkedCount >= min) {
+                      input.__validationStarted = true;
+                    }
+                  }
+                  if (input.__validationStarted) {
+                    updateFieldStatus(fieldGroup);
+                  }
+                });
+              });
+
+              input.addEventListener('blur', function () {
+                input.__validationStarted = true;
+                updateFieldStatus(fieldGroup);
+              });
+            });
+          } else if (input) {
+            input.__validationStarted = false;
+
+            if (input.tagName.toLowerCase() === 'select') {
+              input.addEventListener('change', function () {
+                input.__validationStarted = true;
+                updateFieldStatus(fieldGroup);
+              });
+            } else {
+              input.addEventListener('input', function () {
+                const value = input.value.trim();
+                const length = value.length;
+                const min = parseInt(input.getAttribute('min')) || 0;
+                const max = parseInt(input.getAttribute('max')) || Infinity;
+
+                if (!input.__validationStarted) {
+                  if (input.type === 'email') {
+                    if (isValid(fieldGroup)) input.__validationStarted = true;
+                  } else {
+                    if (
+                      (input.hasAttribute('min') && length >= min) ||
+                      (input.hasAttribute('max') && length <= max)
+                    ) {
+                      input.__validationStarted = true;
+                    }
+                  }
+                }
+
+                if (input.__validationStarted) {
+                  updateFieldStatus(fieldGroup);
+                }
+              });
+
+              input.addEventListener('blur', function () {
+                input.__validationStarted = true;
+                updateFieldStatus(fieldGroup);
+              });
+            }
+          }
+        });
+
+        if (dataSubmit) {
+          dataSubmit.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (validateAndStartLiveValidationForAll()) {
+              if (isSpam()) return;
+              realSubmitInput.click();
+            }
+          });
+        }
+
+        form.addEventListener('submit', function (e) {
+          if (!validateAndStartLiveValidationForAll()) {
+            e.preventDefault();
+            return;
+          }
+          if (isSpam()) {
+            e.preventDefault();
+            return;
+          }
+        });
+
+        form.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
+            event.preventDefault();
+            if (validateAndStartLiveValidationForAll()) {
+              if (isSpam()) return;
+              realSubmitInput.click();
+            }
+          }
+        });
+      });
+    }
+
+    // Run on initial page load
+    initAdvancedFormValidation();
+
+    // Run again when DOM changes (for dynamically loaded content)
+    const observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (mutation.addedNodes.length > 0) {
+          initAdvancedFormValidation();
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Make the function globally available
+    window.initAdvancedFormValidation = initAdvancedFormValidation;
+  }
+
+  // =========================================================
+  // SIGN-IN spin button — auth pages
+  // (was Slater SIGN-IN.js)
+  // =========================================================
+  function dfsSignIn() {
+    //spin effect + refresh
+    const spinBtn = document.querySelector('[data-spin="btn"]');
+    const spinIcon = document.getElementById("spin_this");
+    if (spinBtn && spinIcon) {
+      spinBtn.style.cursor = "pointer";
+      spinBtn.addEventListener("click", () => {
+        gsap.fromTo(spinIcon, { rotation: 0 },
+        {
+          rotation: -720,
+          duration: 1,
+          ease: "power2.inOut",
+          transformOrigin: "50% 50%"
+        });
+        setTimeout(() => location.reload(), 1000);
+      });
+    }
+  }
+
+  // =========================================================
+  // Run
+  // Page sections run straight away, like the old Slater page scripts did.
+  // Global + Home wait for the whole page, like their old "defer" tags.
+  // =========================================================
+  var path = location.pathname.replace(/\/+$/, '') || '/';
+
+  var AUTH_PAGES = ['/login', '/sign-up', '/create-account', '/create-account-2',
+    '/forgot-password', '/reset-password'];
+
+  if (path === '/courses/fundamentals') {
+    dfsCourse();
+    dfsFormValidation();
+  } else if (path === '/dashboard') {
+    dfsDashboard();
+  } else if (path === '/feedback') {
+    dfsFeedback();
+  } else if (path === '/onbaording-test') {
+    // Order matters: Feedback sets up the form first, so Form validation skips it.
+    dfsFeedback();
+    dfsFormValidation();
+  } else if (AUTH_PAGES.indexOf(path) > -1) {
+    dfsFormValidation();
+    dfsSignIn();
+  }
+
+  function onPageReady(fn) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  onPageReady(function () {
+    dfsGlobal();
+    if (path === '/' || path === '/course' || path === '/test-zone') dfsHome();
+  });
+
+})();
