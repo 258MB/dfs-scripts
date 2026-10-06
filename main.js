@@ -1,8 +1,9 @@
 /* =========================================================
    Digital Feng Shui — site JavaScript
    Loaded once, site-wide, from Site settings → Footer:
-   <script src="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/main.js"></script>
-   (no defer — see "Run" at the bottom for timing)
+   <script src="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/main.min.js"></script>
+   (no defer — see "Run" at the bottom for timing; jsDelivr builds
+   main.min.js from this file automatically)
 
    Each section below is one former Slater script, wrapped in its own
    function so names can't clash. The router at the bottom decides
@@ -12,18 +13,90 @@
 (function () {
 
   // =========================================================
+  // SETTINGS
+  // =========================================================
+
+  // Countdown for every [data-timer] element on the site
+  var COUNTDOWN_DEADLINE = '2026/10/15 00:00';
+
+  // =========================================================
+  // SHARED HELPERS — used by more than one section
+  // =========================================================
+
+  // Runs fn once Memberstack has loaded (checks every 100ms, gives up after 5s).
+  function whenMemberstackReady(fn) {
+    var tries = 0;
+    (function check() {
+      if (window.$memberstackDom) return fn();
+      if (++tries < 50) setTimeout(check, 100);
+      else console.warn('Memberstack never loaded');
+    })();
+  }
+
+  // Rolls the three number wheels inside [data-progress-numbers="<course>"] to a percentage.
+  function animateProgressNumbers(courseName, percent, duration) {
+    const container = document.querySelector(`[data-progress-numbers="${courseName}"]`);
+    if (!container) return;
+    const wrap = (group) => container.querySelector(
+      `.loading__number-group.is--${group} .loading__number-wrap`);
+
+    // Index of the digit to show in each wheel
+    // (wheel 1 has 2 items: empty / "1"; wheels 2 and 3 have 11 items: 0–9 + final "0")
+    let first = 0,
+      second = 0,
+      third = percent; // 0–9%: empty, empty, ones
+    if (percent === 100) {
+      first = 1;
+      second = 10;
+      third = 10;
+    } else if (percent >= 10) {
+      second = Math.floor(percent / 10);
+      third = percent % 10;
+    }
+
+    const steps = [
+      [wrap('first'), first * -50],
+      [wrap('second'), second * -(100 / 11)],
+      [wrap('third'), third * -(100 / 11)]
+    ];
+    steps.forEach(([el, yPercent]) => {
+      if (el) gsap.to(el, { yPercent, duration, ease: 'power2.out' });
+    });
+  }
+
+  // Slide-up panel with curved caps (.onboarding-overlay). Used by the
+  // course onboarding and the feedback form.
+  const OVERLAY_DURATION = 1.4;
+
+  function overlayCoverIn(o) {
+    document.querySelectorAll('video').forEach(v => {
+      try { v.pause(); } catch (_) {}
+    });
+    gsap.set(o.panel, { yPercent: 0, y: '30vw' });
+    gsap.set(o.capTop, { scaleY: 1 });
+    gsap.set(o.capBottom, { scaleY: 1 });
+    if (o.content) gsap.set(o.content, { autoAlpha: 0, y: 20 });
+    o.overlay.style.display = 'block';
+    if (o.lockScroll) document.body.style.overflow = 'hidden';
+
+    const tl = gsap.timeline()
+      .to(o.panel, { yPercent: -100, y: 0, duration: OVERLAY_DURATION, ease: 'power2.inOut' }, 0)
+      .to(o.capTop, { scaleY: 0.35, duration: OVERLAY_DURATION, ease: 'none' }, 0);
+    if (o.content) {
+      tl.to(o.content, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' },
+        OVERLAY_DURATION * 0.75);
+    }
+    return tl;
+  }
+
+  // =========================================================
   // GLOBAL — every page
   // (was Slater GLOBAL.js)
   // =========================================================
   function dfsGlobal() {
-    // timer
-    // timer
-    // timer
-    // timer
-
     // single interval timer (updates all [data-timer] elements)
     (function () {
-      const deadline = '2026/10/15 00:00';
+      const deadline = COUNTDOWN_DEADLINE;
       const elTimers = Array.from(document.querySelectorAll('[data-timer]'));
 
       function pad(num, size = 2) {
@@ -82,9 +155,7 @@
       const intervalId = setInterval(tick, 1000);
     })();
 
-    // //testing osmo text
-    // //testing osmo text\
-    // //testing osmo text
+    // ---- TEXT REVEAL (Osmo) ----
     const splitConfig = {
       lines: { duration: 0.8, stagger: 0.08 },
       words: { duration: 0.6, stagger: 0.06 },
@@ -146,25 +217,22 @@
       });
     });
 
-    //logo movement
+    //logo movement — an eighth turn every 4.4s (only on pages that have the logo)
+    const logos = document.querySelectorAll("#LOGO_ICON, #LOGO_ICON_2");
+    if (logos.length) {
+      let angle = 0;
+      setInterval(() => {
+        angle += 45;
+        gsap.to(logos, {
+          rotation: angle,
+          duration: 0.6,
+          ease: "ease",
+          transformOrigin: "center center",
+        });
+      }, 4400);
+    }
 
-    let angle = 0;
-    setInterval(() => {
-      angle += 45;
-      gsap.to("#LOGO_ICON, #LOGO_ICON_2", {
-        rotation: angle,
-        duration: 0.6,
-        ease: "ease",
-        transformOrigin: "center center",
-      });
-    }, 4400);
-
-    //paralax
-    //paralax
-    //paralax
-    //paralax
-    //paralax
-    //paralax
+    // ---- PARALLAX ----
 
     function initGlobalParallax() {
       const mm = gsap.matchMedia()
@@ -271,19 +339,21 @@
 
     initButtonCharacterStagger();
 
-    gsap.to("#progress_bar", {
-      width: "85%",
-      ease: "none",
-      scrollTrigger: {
-        trigger: "body",
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true
-      }
-    });
+    // Page scroll progress bar (only on pages that have one)
+    if (document.getElementById("progress_bar")) {
+      gsap.to("#progress_bar", {
+        width: "85%",
+        ease: "none",
+        scrollTrigger: {
+          trigger: "body",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: true
+        }
+      });
+    }
 
-    //FAQ
-    //FAQ
+    // ---- FAQ ACCORDION ----
 
     function initAccordionCSS() {
       document.querySelectorAll('[data-accordion-css-init]').forEach((accordion) => {
@@ -1308,11 +1378,7 @@
       menuToggle.addEventListener('click', toggleMenu);
     }
 
-    //water horse
-    //water horse
-    //water horse
-
-    //water horse
+    // ---- WATER HORSE (hydration reminder) ----
     gsap.registerPlugin(SplitText, CustomEase);
 
     CustomEase.create("elastic",
@@ -1464,7 +1530,6 @@
     // e.g., /courses/fundamentals → "fundamentals"
     const currentCourse = window.location.pathname.split('/courses/')[1]?.split('/')[0] ||
       'fundamentals';
-    console.log('Current course:', currentCourse);
     const lessons = [
       { id: "lesson-0.1", complete: false },
       { id: "lesson-0.2", complete: false },
@@ -1609,71 +1674,16 @@
       // Animate number wheels
       animateProgressNumbers(currentCourse, percent, duration);
       // Animate progress bar
-      gsap.to(progressBar, {
-        xPercent: percent - 100,
-        duration: duration,
-        ease: "power2.out"
-      });
+      if (progressBar) {
+        gsap.to(progressBar, {
+          xPercent: percent - 100,
+          duration: duration,
+          ease: "power2.out"
+        });
+      }
       // Save progress to Memberstack whenever it changes (but not on page load)
       if (!isPageLoad) {
         saveMemberProgress();
-      }
-    }
-    // Animate the rolling number wheels
-    function animateProgressNumbers(courseName, percent, duration = 0.6) {
-      const container = document.querySelector(`[data-progress-numbers="${courseName}"]`);
-      if (!container) return;
-      const firstWrap = container.querySelector(
-        '.loading__number-group.is--first .loading__number-wrap');
-      const secondWrap = container.querySelector(
-        '.loading__number-group.is--second .loading__number-wrap');
-      const thirdWrap = container.querySelector(
-        '.loading__number-group.is--third .loading__number-wrap');
-      // Calculate digit positions
-      let firstIndex, secondIndex, thirdIndex;
-      if (percent === 100) {
-        // 100% → show "1", "0", "0"
-        firstIndex = 1; // "1" is at index 1
-        secondIndex = 10; // final "0" is at index 10
-        thirdIndex = 10; // final "0" is at index 10
-      } else if (percent >= 10) {
-        // 10-99% → empty, tens digit, ones digit
-        const tens = Math.floor(percent / 10);
-        const ones = percent % 10;
-        firstIndex = 0; // empty
-        secondIndex = tens; // 1-9 are at index 1-9
-        thirdIndex = ones; // 0-9 are at index 0-9
-      } else {
-        // 0-9% → empty, empty, ones digit
-        firstIndex = 0; // empty
-        secondIndex = 0; // empty
-        thirdIndex = percent; // 0-9 are at index 0-9
-      }
-      // Animate each wheel
-      // First group has 2 items, so each step = 50%
-      // Second group has 11 items, so each step = 100/11 ≈ 9.09%
-      // Third group has 11 items, so each step = 100/11 ≈ 9.09%
-      const ease = 'power2.out';
-      if (firstWrap) {
-        gsap.to(firstWrap, {
-          yPercent: firstIndex * -50, // 2 items: 100/2 = 50% per step
-          duration: duration,
-          ease: ease
-        });
-      }
-      if (secondWrap) {
-        gsap.to(secondWrap, {
-          yPercent: secondIndex * -(100 / 11), // 11 items
-          duration: duration,
-          ease: ease
-        });
-      }
-      if (thirdWrap) {
-        gsap.to(thirdWrap, {
-          yPercent: thirdIndex * -(100 / 11), // 11 items
-          duration: duration,
-          ease: ease
-        });
       }
     }
     // INITIAL STATE - Load first incomplete lesson
@@ -1754,6 +1764,10 @@
       newPlayer.setAttribute('data-player-src', videoSrc);
       newPlayer.setAttribute('data-player-activated', 'false');
       newPlayer.setAttribute('data-player-status', 'idle');
+      // Shut the old player down (its video stream + page-level listeners),
+      // otherwise every lesson switch leaves one running in the background
+      if (oldPlayer._hls) { try { oldPlayer._hls.destroy(); } catch (_) {} oldPlayer._hls = null; }
+      (oldPlayer._cleanup || []).forEach(fn => fn());
       // Replace the old player in DOM
       oldPlayer.parentNode.replaceChild(newPlayer, oldPlayer);
       // Reinitialize Bunny player
@@ -1803,8 +1817,8 @@
         }
       }
     }
-    // Init on page load
-    setTimeout(async () => {
+    // Init on page load (short pause, then wait until Memberstack is actually there)
+    setTimeout(() => whenMemberstackReady(async () => {
       // Remove srcset immediately so placeholder images work correctly
       const placeholder = document.getElementById('placeholder_img');
       if (placeholder) {
@@ -1815,20 +1829,15 @@
       setInitialState();
       setupCourseItemClicks();
       updateAccordionStatus(); // Set initial accordion status
-    }, 200);
+    }), 200);
     // Function to load member's progress from Memberstack
     async function loadMemberProgress() {
       try {
         const memberData = await window.$memberstackDom.getMemberJSON();
-        console.log('=== LOADING MEMBER DATA ===');
-        console.log('Current course:', currentCourse);
-        console.log('Full member data:', memberData);
         // Check if member has saved progress for this course
         if (memberData && memberData.data && memberData.data.courses && memberData.data.courses[
             currentCourse]) {
-          console.log('✅ Found saved progress for', currentCourse);
           const savedLessons = memberData.data.courses[currentCourse].lessons;
-          console.log('Saved lessons:', savedLessons);
           // Update our lessons array with saved progress
           savedLessons.forEach(savedLesson => {
             const lesson = lessons.find(l => l.id === savedLesson.id);
@@ -1841,12 +1850,8 @@
             updateLessonUI(lesson.id, lesson.complete);
           });
           updateProgress(true); // true = page load, slower animation
-          console.log('Current lessons state after loading:', lessons);
-          console.log('=========================');
-        } else {
-          console.log('❌ No saved progress found for', currentCourse, '- using defaults');
-          console.log('=========================');
         }
+        // (no saved progress yet → keep the defaults)
       } catch (error) {
         console.error('❌ Error loading member data:', error);
       }
@@ -1854,9 +1859,6 @@
     // Function to save progress to Memberstack
     async function saveMemberProgress() {
       try {
-        console.log('=== SAVING PROGRESS ===');
-        console.log('Course:', currentCourse);
-        console.log('Lessons being saved:', lessons);
         // First get existing data to preserve other courses
         const memberData = await window.$memberstackDom.getMemberJSON();
         const existingCourses = (memberData && memberData.data && memberData.data.courses) || {};
@@ -1867,21 +1869,16 @@
             lessons: lessons
           }
         };
-        const result = await window.$memberstackDom.updateMemberJSON({
+        await window.$memberstackDom.updateMemberJSON({
           json: {
             courses: updatedCourses
           }
         });
-        console.log('✅ Progress saved successfully!');
-        console.log('Save result:', result);
-        console.log('======================');
       } catch (error) {
         console.error('❌ Error saving progress:', error);
       }
     }
-    // VIDEO PLAYER
-    // VIDEO PLAYER
-    // VIDEO PLAYER
+    // ---- VIDEO PLAYER ----
     // Get the finish link block element (available globally)
     var finishLinkBlock = document.getElementById('finish_video');
     // Add click listener to close the finish link block
@@ -1902,6 +1899,14 @@
           video.removeAttribute('src');
           video.load();
         } catch (_) {}
+        // Page-level listeners are registered through listen(), so the course
+        // can remove them when it swaps this player out for the next lesson
+        player._cleanup = [];
+
+        function listen(target, type, fn) {
+          target.addEventListener(type, fn);
+          player._cleanup.push(() => target.removeEventListener(type, fn));
+        }
         // Attribute helpers
         function setStatus(s) {
           if (player.getAttribute('data-player-status') !== s) {
@@ -2112,14 +2117,9 @@
             exitFullscreen();
           else enterFullscreen();
         }
-        document.addEventListener('fullscreenchange', function () {
-          setFsAttr(
-            isFsActive());
-        });
-        document.addEventListener('webkitfullscreenchange', function () {
-          setFsAttr(
-            isFsActive());
-        });
+        function onFsChange() { setFsAttr(isFsActive()); }
+        listen(document, 'fullscreenchange', onFsChange);
+        listen(document, 'webkitfullscreenchange', onFsChange);
         video.addEventListener('webkitbeginfullscreen', function () { setFsAttr(true); });
         video.addEventListener('webkitendfullscreen', function () { setFsAttr(false); });
         // Controls (delegated)
@@ -2255,7 +2255,7 @@
             lastSeekTs = 0,
             seekThrottle = 180,
             rect = null;
-          window.addEventListener('resize', function () { if (!dragging) rect = null; });
+          listen(window, 'resize', function () { if (!dragging) rect = null; });
 
           function getFractionFromX(x) {
             if (!rect) rect = timeline.getBoundingClientRect();
@@ -2356,9 +2356,10 @@
           scheduleHide();
         }
         player.addEventListener('pointerdown', wakeControls);
-        document.addEventListener('fullscreenchange', wakeControls);
-        document.addEventListener('webkitfullscreenchange', wakeControls);
+        listen(document, 'fullscreenchange', wakeControls);
+        listen(document, 'webkitfullscreenchange', wakeControls);
         var trackingMove = false;
+        player._cleanup.push(() => window.removeEventListener('pointermove', onPointerMoveGlobal));
 
         function onPointerMoveGlobal(e) {
           var r = player.getBoundingClientRect();
@@ -2404,6 +2405,7 @@
             });
           }, { threshold: 0.1 });
           io.observe(player);
+          player._cleanup.push(() => io.disconnect());
         }
       });
       // Helper: time/text/meta/ratio utilities
@@ -2579,31 +2581,13 @@
       const submitBtn = formEl?.querySelector("[data-submit]");
       if (!overlay || !panel) return console.warn("onboarding: missing element");
 
-      const CAP_START = 1;
-      const CAP_END = 0.35;
-      const DURATION = 1.4;
+      const DURATION = OVERLAY_DURATION;
       const HOOK = "https://hook.eu1.make.com/qhe2n9ssb9vogd73tssm6zg71wwyphc2";
 
       let submitting = false;
 
-      function pauseAllVideos() {
-        document.querySelectorAll("video").forEach(v => {
-          try { v.pause(); } catch (_) {}
-        });
-      }
-
       function coverIn() {
-        pauseAllVideos();
-        gsap.set(panel, { yPercent: 0, y: "30vw" });
-        gsap.set(capTop, { scaleY: CAP_START });
-        gsap.set(capBottom, { scaleY: 1 });
-        gsap.set(form, { autoAlpha: 0, y: 20 });
-        overlay.style.display = "block";
-        document.body.style.overflow = "hidden";
-        return gsap.timeline()
-          .to(panel, { yPercent: -100, y: 0, duration: DURATION, ease: "power2.inOut" }, 0)
-          .to(capTop, { scaleY: CAP_END, duration: DURATION, ease: "none" }, 0)
-          .to(form, { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" }, DURATION * 0.75);
+        return overlayCoverIn({ overlay, panel, capTop, capBottom, content: form, lockScroll: true });
       }
 
       function coverOut() {
@@ -2728,12 +2712,9 @@
     async function loadDashboardProgress() {
       try {
         const memberData = await window.$memberstackDom.getMemberJSON();
-        console.log('=== LOADING DASHBOARD PROGRESS ===');
-        console.log('Member data:', memberData);
 
         if (memberData && memberData.data && memberData.data.courses) {
           const courses = memberData.data.courses;
-          console.log('Found courses:', Object.keys(courses));
 
           // Update progress for courses that have saved data
           Object.keys(courses).forEach(courseName => {
@@ -2744,8 +2725,6 @@
             const completed = lessons.filter(l => l.complete).length;
             const total = lessons.length;
             const percent = Math.round((completed / total) * 100);
-
-            console.log(`${courseName}: ${completed}/${total} = ${percent}%`);
 
             // Animate progress bar with GSAP
             const progressBar = document.querySelector(`[progress_bar="${courseName}"]`);
@@ -2758,87 +2737,16 @@
             }
 
             // Animate number wheels
-            animateProgressNumbers(courseName, percent);
+            animateProgressNumbers(courseName, percent, 1.5);
           });
-
-          console.log('=================================');
-        } else {
-          console.log('No course data found');
-          console.log('=================================');
         }
       } catch (error) {
         console.error('Error loading dashboard progress:', error);
       }
     }
 
-    // Animate the rolling number wheels
-    function animateProgressNumbers(courseName, percent) {
-      const container = document.querySelector(`[data-progress-numbers="${courseName}"]`);
-      if (!container) return;
-
-      const firstWrap = container.querySelector(
-        '.loading__number-group.is--first .loading__number-wrap');
-      const secondWrap = container.querySelector(
-        '.loading__number-group.is--second .loading__number-wrap');
-      const thirdWrap = container.querySelector(
-        '.loading__number-group.is--third .loading__number-wrap');
-
-      // Calculate digit positions
-      let firstIndex, secondIndex, thirdIndex;
-
-      if (percent === 100) {
-        // 100% → show "1", "0", "0"
-        firstIndex = 1; // "1" is at index 1
-        secondIndex = 10; // final "0" is at index 10
-        thirdIndex = 10; // final "0" is at index 10
-      } else if (percent >= 10) {
-        // 10-99% → empty, tens digit, ones digit
-        const tens = Math.floor(percent / 10);
-        const ones = percent % 10;
-        firstIndex = 0; // empty
-        secondIndex = tens; // 1-9 are at index 1-9
-        thirdIndex = ones; // 0-9 are at index 0-9
-      } else {
-        // 0-9% → empty, empty, ones digit
-        firstIndex = 0; // empty
-        secondIndex = 0; // empty
-        thirdIndex = percent; // 0-9 are at index 0-9
-      }
-
-      // Animate each wheel
-      // First group has 2 items, so each step = 50%
-      // Second group has 11 items, so each step = 100/11 ≈ 9.09%
-      // Third group has 11 items, so each step = 100/11 ≈ 9.09%
-      const duration = 1.5;
-      const ease = 'power2.out';
-
-      if (firstWrap) {
-        gsap.to(firstWrap, {
-          yPercent: firstIndex * -50, // 2 items: 100/2 = 50% per step
-          duration: duration,
-          ease: ease
-        });
-      }
-
-      if (secondWrap) {
-        gsap.to(secondWrap, {
-          yPercent: secondIndex * -(100 / 11), // 11 items
-          duration: duration,
-          ease: ease
-        });
-      }
-
-      if (thirdWrap) {
-        gsap.to(thirdWrap, {
-          yPercent: thirdIndex * -(100 / 11), // 11 items
-          duration: duration,
-          ease: ease
-        });
-      }
-    }
-
-    // Run when page loads
-    loadDashboardProgress();
+    // Run when page loads (as soon as Memberstack is there)
+    whenMemberstackReady(loadDashboardProgress);
 
     // CARD HOVER ANIMATIONS (your existing code)
     const cards = document.querySelectorAll('[course_card]');
@@ -2886,10 +2794,7 @@
       }
     });
 
-    // TAB SWITCHING FUNCTIONALITY
-    // TAB SWITCHING FUNCTIONALITY
-    // TAB SWITCHING FUNCTIONALITY
-    // TAB SWITCHING FUNCTIONALITY
+    // ---- TAB SWITCHING ----
     function initDashboardTabs() {
       // Define your tabs
       const tabs = {
@@ -2899,10 +2804,11 @@
         'tools': 'tools'
       };
       // Set initial state - show courses, hide everything else
-      document.getElementById('courses').style.display = 'flex';
-      document.getElementById('accountd').style.display = 'none';
-      document.getElementById('orders').style.display = 'none';
-      document.getElementById('tools').style.display = 'none';
+      // (a missing tab section is skipped instead of breaking the whole menu)
+      Object.values(tabs).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = id === 'courses' ? 'flex' : 'none';
+      });
 
       // Get all menu items
       const menuItems = document.querySelectorAll('.menu_item');
@@ -2911,7 +2817,7 @@
         item.addEventListener('click', function (e) {
           e.preventDefault();
 
-          const tabName = this.querySelector('.menu_txt').textContent.trim();
+          const tabName = (this.querySelector('.menu_txt')?.textContent || '').trim();
           const targetId = tabs[tabName];
 
           // If this tab isn't set up yet, ignore
@@ -3520,39 +3426,12 @@
         return console.warn('feedback overlay: missing element');
       }
 
-      var CAP_START = 1;
-      var CAP_END = 0.35;
-      var DURATION = 1.4;
       var HOOK = "https://hook.eu1.make.com/qhe2n9ssb9vogd73tssm6zg71wwyphc2";
 
       var submitting = false;
 
-      function pauseAllVideos() {
-        document.querySelectorAll('video').forEach(function (v) {
-          try { v.pause(); } catch (_) {}
-        });
-      }
-
       function coverIn() {
-        pauseAllVideos();
-
-        gsap.set(panel, { yPercent: 0, y: '30vw' });
-        gsap.set(capTop, { scaleY: CAP_START });
-        gsap.set(capBottom, { scaleY: 1 });
-        if (content) gsap.set(content, { autoAlpha: 0, y: 20 });
-
-        overlay.style.display = 'block';
-
-        var tl = gsap.timeline()
-          .to(panel, { yPercent: -100, y: 0, duration: DURATION, ease: 'power2.inOut' }, 0)
-          .to(capTop, { scaleY: CAP_END, duration: DURATION, ease: 'none' }, 0);
-
-        if (content) {
-          tl.to(content, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-            DURATION * 0.75);
-        }
-
-        return tl;
+        return overlayCoverIn({ overlay, panel, capTop, capBottom, content });
       }
 
       function readAnswers() {
@@ -3956,12 +3835,16 @@
     // Run on initial page load
     initAdvancedFormValidation();
 
-    // Run again when DOM changes (for dynamically loaded content)
+    // Run again when DOM changes (for dynamically loaded content) — at most once
+    // per frame, however many elements animations add or remove in between
+    let recheckQueued = false;
     const observer = new MutationObserver(function (mutations) {
-      mutations.forEach(function (mutation) {
-        if (mutation.addedNodes.length > 0) {
-          initAdvancedFormValidation();
-        }
+      if (recheckQueued) return;
+      if (!mutations.some(m => m.addedNodes.length > 0)) return;
+      recheckQueued = true;
+      requestAnimationFrame(function () {
+        recheckQueued = false;
+        initAdvancedFormValidation();
       });
     });
 
