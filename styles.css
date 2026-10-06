@@ -1,8 +1,8 @@
 /* =========================================================
    Digital Feng Shui — site CSS
    Loaded once, site-wide, from Site settings → Head:
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/styles.min.css">
-   jsDelivr builds styles.min.css from this file automatically.
+   <link rel="stylesheet" href="https://rimbodesigns.github.io/dfs-scripts/styles.min.css">
+   The GitHub workflow builds styles.min.css and puts it live after the tests pass.
 
    Webflow's own Designer styles stay in Webflow. This file holds the
    hand-written CSS that used to live in code embeds.

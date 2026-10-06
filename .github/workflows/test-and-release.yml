@@ -1,0 +1,109 @@
+# Runs on every pull request and every push to main.
+# 1. Builds main.min.js + styles.min.css and tests the buy flow on the REAL site
+#    (live + staging) with the new files swapped in. Nothing is published by the test.
+# 2. Only on main, and only when the test is green: tags a new version and puts it live
+#    (GitHub Pages, which Webflow loads). Red = nothing changes on the site.
+name: Test and release
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run build
+
+      - name: Buy-flow test (new code on its own, old Webflow hotfix removed)
+        run: npx playwright test
+
+      - name: Buy-flow test (new code together with the old Webflow hotfix)
+        run: npx playwright test
+        env:
+          BLOCK_HOTFIX: '0'
+
+      - name: Save test report (screenshots and traces)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  release:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rimbodesigns/dfs-scripts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: live
+      cancel-in-progress: false
+    permissions:
+      contents: write   # push the version tag
+      pages: write      # publish to GitHub Pages
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Pick the version number
+        id: version
+        run: |
+          existing=$(git tag --points-at HEAD --list 'v*' | sort -V | tail -n1)
+          if [ -n "$existing" ]; then
+            echo "version=$existing" >> "$GITHUB_OUTPUT"; echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n1)
+            latest=${latest:-v0.0.0}
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            echo "version=v$major.$minor.$((patch + 1))" >> "$GITHUB_OUTPUT"; echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        run: npm run build
+        env:
+          DFS_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Tag the version
+        if: steps.version.outputs.new == 'true'
+        run: |
+          git tag "${{ steps.version.outputs.version }}"
+          git push origin "${{ steps.version.outputs.version }}"
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+      - name: Put it live
+        id: deploy
+        uses: actions/deploy-pages@v5
+
+      - name: Check the live files
+        run: bash .github/scripts/check-live.sh "${{ steps.deploy.outputs.page_url }}" "${{ steps.version.outputs.version }}"
