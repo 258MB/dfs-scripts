@@ -110,12 +110,11 @@
   //                                 (value = the date, e.g. 2026-10-12).
   //                                 Text goes into .choice_day-name / .choice_day-number
   //
-  // 4. Type-your-own answer
-  //   input[data-choice-other]      a text field inside a radio group that is
-  //                                 itself an option: typing picks it (the other
-  //                                 options unselect), picking an option unselects
-  //                                 it. The typed text is sent as the answer.
-  //                                 Gets .is-picked while it is the answer.
+  // 4. Extra text field
+  //   input[data-choice-other]      a text field inside a radio group. A button and
+  //                                 typed text can both be given; either is enough
+  //                                 when the question is required. The text is sent
+  //                                 separately as "<group name>-other".
   //
   // Required? Put data-validate on the field group (Osmo form validation).
   // =========================================================
@@ -288,37 +287,35 @@
       });
     });
 
-    // 4. Type-your-own answer (a text field that is one of the radio options)
+    // 4. Extra text field next to the options. A button and typed text can both be
+    //    given; either one is enough for a required question. The text is sent as
+    //    its own field: "<group name>-other" (e.g. problems-other).
     document.querySelectorAll('input[data-choice-other]').forEach(function (field) {
       const group = field.closest('[data-radiocheck-group]');
       const option = group && group.querySelector('input[type="radio"]');
       if (!option || field.__otherReady) return;
       field.__otherReady = true;
+      field.name = option.name + '-other';
 
-      // A hidden radio carries the typed text, so the form sees it as a picked option
-      const radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = option.name;
-      radio.hidden = true;
-      radio.tabIndex = -1;
-      field.insertAdjacentElement('afterend', radio);
-      field.removeAttribute('name'); // sent through the radio only
+      // A hidden, unnamed radio tells the form validation "answered" when only text is given
+      const answered = document.createElement('input');
+      answered.type = 'radio';
+      answered.hidden = true;
+      answered.tabIndex = -1;
+      field.insertAdjacentElement('afterend', answered);
 
-      function pick() {
-        const text = field.value.trim();
-        radio.value = text;
-        if (radio.checked !== !!text) {
-          radio.checked = !!text;
-          radio.dispatchEvent(new Event('change', { bubbles: true }));
+      function sync() {
+        const buttonPicked = !!group.querySelector('input[type="radio"]:checked:not([hidden])');
+        const onlyText = !buttonPicked && field.value.trim() !== '';
+        if (answered.checked !== onlyText) {
+          answered.checked = onlyText;
+          answered.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        field.classList.toggle('is-picked', !!text);
       }
 
-      field.addEventListener('input', pick);
-      field.addEventListener('click', pick);
-      // Picking one of the buttons: the typed text stays, but is no longer the answer
+      field.addEventListener('input', sync);
       group.addEventListener('change', function (e) {
-        if (e.target !== radio) field.classList.toggle('is-picked', radio.checked);
+        if (e.target !== answered) sync();
       });
     });
   }
@@ -2861,6 +2858,7 @@
           firstName: formEl.querySelector('[name="name"]')?.value.trim() || "",
           work: getChecked("work")[0] || "",
           problems: problems.join(", "),
+          problemsOther: formEl.querySelector('[name="problems-other"]')?.value.trim() || "",
           planning: planning,
           startDay: planning === "Plan" ? (getChecked("start-day")[0] || "") : "",
           nudge: getChecked("Nudge")[0] || "",
@@ -2884,7 +2882,7 @@
         // the answers above (and "onboarded") are still saved
         try {
           await window.$memberstackDom.updateMember({
-            customFields: { "work": data.work, "start-day": data.startDay }
+            customFields: { "work": data.work, "start-day": data.startDay, "problems-other": data.problemsOther }
           });
         } catch (err) {
           console.warn("onboarding: work/start-day not saved in Memberstack", err);
@@ -2903,6 +2901,7 @@
               firstName: data.firstName,
               work: data.work,
               problems: data.problems,
+              problemsOther: data.problemsOther,
               planning: data.planning,
               startDay: data.startDay,
               nudge: data.nudge
