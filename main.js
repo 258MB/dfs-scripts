@@ -214,6 +214,10 @@
         setTimeout(function () { setOpen(false); }, 200);
       });
 
+      // Focus landing on an option (keyboard, or the form pointing at a missing
+      // answer) opens the panel, so the option is visible
+      panel.addEventListener('focusin', function () { setOpen(true); });
+
       // Clicking anywhere else closes it
       document.addEventListener('click', function (e) {
         if (open && !field.contains(e.target)) setOpen(false);

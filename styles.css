@@ -505,6 +505,11 @@ input:-webkit-autofill:focus {
   opacity: 1;
 }
 
+/* Required but nothing picked: red border like the other fields */
+[data-validate].is--error [data-choice-toggle] {
+  border-color: #FF4C24;
+}
+
 /* Panel that opens for one answer ("Plan"): closed until that answer is picked */
 .w-mod-js [data-choice-reveal] {
   display: none;
