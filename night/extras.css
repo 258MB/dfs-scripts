@@ -143,6 +143,12 @@ html.dfs-night .sing_in_bg { background-image: url(large_BG3-night.webp); }
 html.dfs-night .form-submit-btn,
 html.dfs-night .radiocheck-field.is-boxed:has(input:checked) .radiocheck-label.is-boxed { color: #f6f2e9; }
 
+/* Fields the browser filled in (email): by day a light-blue highlight, painted with an
+   inset shadow (which the generator skips). At night: the deep night highlight. */
+html.dfs-night input:-webkit-autofill,
+html.dfs-night input:-webkit-autofill:hover,
+html.dfs-night input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #11233d inset; }
+
 /* Pages without a nav: a small square button in the bottom-left corner. */
 .dfs-night-toggle.is-floating {
   position: fixed; left: 1rem; bottom: 1rem; z-index: 50;
