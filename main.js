@@ -131,6 +131,11 @@
     root.querySelectorAll('input[type="radio"][data-name]').forEach(function (input) {
       if (input.name !== input.dataset.name) input.name = input.dataset.name;
     });
+    // Webflow's Form Label outputs for="", which points at nothing and stops a
+    // click on the label from picking the option inside it
+    root.querySelectorAll('label[for=""]').forEach(function (label) {
+      label.removeAttribute('for');
+    });
   }
 
   function dfsChoiceDates() {
