@@ -149,6 +149,31 @@ html.dfs-night input:-webkit-autofill,
 html.dfs-night input:-webkit-autofill:hover,
 html.dfs-night input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #11233d inset; }
 
+/* Onboarding / feedback overlay: its grid comes from a page embed (onboard_css) with a
+   fixed #F2F0E7, which the generator can't see. Give it the same faint night grid. */
+html.dfs-night .transition-panel,
+html.dfs-night .panel-cap-top,
+html.dfs-night .panel-cap-bottom {
+  background-image:
+    repeating-linear-gradient(to right, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem),
+    repeating-linear-gradient(to bottom, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem);
+}
+
+/* Dashboard course covers: the light mountain print gets a moonlit tint (like the chapter
+   illustrations); the title and logo on it keep their day ink. */
+html.dfs-night .cover_course-card::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: #8b9bc2; mix-blend-mode: multiply;
+}
+html.dfs-night .cover_course-card .course_title,
+html.dfs-night .cover_course-card .logo_icon { color: #3d3a35; }
+html.dfs-night .cover_course-card .logo_icon svg [fill="#3D3A35" i] { fill: #3d3a35; }
+
+/* "Coming soon": by day a dark-grey block. At night a quiet raised block with muted
+   text, so it reads as "not yet" instead of a bright light-grey button. */
+html.dfs-night .coming_soon { background-color: #1d2944; }
+html.dfs-night .coming_soon .text-color-white { color: var(--brand-colors--80-dark_gray); }
+
 /* Pages without a nav: a small square button in the bottom-left corner. */
 .dfs-night-toggle.is-floating {
   position: fixed; left: 1rem; bottom: 1rem; z-index: 50;

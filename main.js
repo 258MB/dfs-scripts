@@ -3041,29 +3041,39 @@
       const arrowIcon = card.querySelector('.cr_arrow');
       if (!arrowBox) return;
 
-      // Create the Timeline
-      const tl = gsap.timeline({ paused: true });
+      // Colours come from the brand variables at hover time, so they follow day/night
+      // mode; after hover the inline colours are cleared again (otherwise a colour from
+      // the other mode could stick to the box).
+      const brand = (name, fallback) =>
+        getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+      const tl = gsap.timeline({
+        paused: true,
+        onReverseComplete: () => gsap.set([arrowBox, arrowIcon].filter(Boolean),
+          { clearProps: 'backgroundColor,color' })
+      });
 
-      // 1. Animate the Box: Background and Border
-      tl.to(arrowBox, {
-        backgroundColor: "#EDF5F9",
-        duration: 0.4,
-        ease: "power2.out"
-      }, 0);
-
-      // 2. Animate the Arrow: Color and Juggle
-      if (arrowIcon) {
-        tl.to(arrowIcon, {
-          color: "#0297DB",
-          rotation: -45,
-          transformOrigin: "50% 50%",
+      function build() {
+        tl.clear();
+        // 1. Animate the Box: Background
+        tl.to(arrowBox, {
+          backgroundColor: brand('--brand-colors--light-bleu', '#EDF5F9'),
           duration: 0.4,
-          ease: "back.out(2)",
+          ease: "power2.out"
         }, 0);
+        // 2. Animate the Arrow: Color and Juggle
+        if (arrowIcon) {
+          tl.to(arrowIcon, {
+            color: brand('--brand-colors--blue', '#0297DB'),
+            rotation: -45,
+            transformOrigin: "50% 50%",
+            duration: 0.4,
+            ease: "back.out(2)",
+          }, 0);
+        }
       }
 
       // Hover Functions
-      const playAnim = () => tl.play();
+      const playAnim = () => { if (tl.progress() === 0) build(); tl.play(); };
       const reverseAnim = () => tl.reverse();
 
       // Listeners

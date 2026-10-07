@@ -67,7 +67,8 @@ COLOR_PROPS = {
     '-webkit-text-fill-color', '-webkit-text-stroke-color', 'accent-color',
 }
 NAMED = {'white': (255, 255, 255, 1), 'black': (0, 0, 0, 1)}
-COLOR_RE = re.compile(r'#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|\b(?:white|black)\b')
+# white/black only as a colour word, not inside a name like --colors--white
+COLOR_RE = re.compile(r'#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|(?<![\w-])(?:white|black)(?![\w-])')
 
 
 def parse(tok):

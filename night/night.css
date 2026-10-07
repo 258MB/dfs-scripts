@@ -45,28 +45,14 @@ html.dfs-night{--brand-colors--light-bage:#0e1628;--brand-colors--bage:#141e34;-
 :where(html.dfs-night) .w-dyn-empty{background-color:#1e2a45}
 :where(html.dfs-night) .w-form-formradioinput--inputType-custom{border:1px solid #2b3755}
 :where(html.dfs-night) .w-checkbox-input--inputType-custom{border:1px solid #2b3755}
-:where(html.dfs-night) .form_radio.is-alternate{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
 :where(html.dfs-night) .form_checkbox-icon.w--redirected-checked{background-color:#f2eee5;border-color:#f2eee5}
 :where(html.dfs-night) .form_checkbox-icon.w--redirected-focus{border-color:#f2eee5}
-:where(html.dfs-night) .form_checkbox-icon.is-alternate{border-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .button{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .button.is-link.is-alternate{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .button.is-secondary.is-alternate{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .button.is-alternate{border-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>);background-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
 :where(html.dfs-night) .rl-styleguide_label{background-color:#11233d}
 :where(html.dfs-night) .rl-styleguide_label.is-html-tag{background-color:#0e1729}
-:where(html.dfs-night) .form_input{background-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .form_input.is-alternate{border-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>);color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .form_input.is-alternate::placeholder{color:var(--_primitives---opacity--#172138-60\<deleted\|relume-variable-neutral-#172138-60\>)}
-:where(html.dfs-night) .text-color-white{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
 :where(html.dfs-night) .form_radio-icon.w--redirected-checked{background-color:#172138;border-color:#f2eee5}
 :where(html.dfs-night) .form_radio-icon.w--redirected-focus{border-color:#f2eee5}
-:where(html.dfs-night) .form_radio-icon.is-alternate{border-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .form_checkbox.is-alternate{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
 :where(html.dfs-night) .form_message-success{background-color:#11233d}
 :where(html.dfs-night) .form_message-error{background-color:#11192d}
-:where(html.dfs-night) .tag.is-text.is-alternate{color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
-:where(html.dfs-night) .tag.is-alternate{border-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>);background-color:var(--_primitives---colors--#172138\<deleted\|relume-variable-neutral-#172138\>)}
 :where(html.dfs-night) .navbar_container{background-color:rgba(20,30,52,0.2)}
 :where(html.dfs-night) .bunny-player__big-btn{background-color:rgba(170,170,170,0.2);border:1px solid rgba(23,33,56,0.102)}
 :where(html.dfs-night) .bunny-player{color:#172138}
@@ -363,6 +349,31 @@ html.dfs-night .radiocheck-field.is-boxed:has(input:checked) .radiocheck-label.i
 html.dfs-night input:-webkit-autofill,
 html.dfs-night input:-webkit-autofill:hover,
 html.dfs-night input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #11233d inset; }
+
+/* Onboarding / feedback overlay: its grid comes from a page embed (onboard_css) with a
+   fixed #F2F0E7, which the generator can't see. Give it the same faint night grid. */
+html.dfs-night .transition-panel,
+html.dfs-night .panel-cap-top,
+html.dfs-night .panel-cap-bottom {
+  background-image:
+    repeating-linear-gradient(to right, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem),
+    repeating-linear-gradient(to bottom, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem);
+}
+
+/* Dashboard course covers: the light mountain print gets a moonlit tint (like the chapter
+   illustrations); the title and logo on it keep their day ink. */
+html.dfs-night .cover_course-card::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: #8b9bc2; mix-blend-mode: multiply;
+}
+html.dfs-night .cover_course-card .course_title,
+html.dfs-night .cover_course-card .logo_icon { color: #3d3a35; }
+html.dfs-night .cover_course-card .logo_icon svg [fill="#3D3A35" i] { fill: #3d3a35; }
+
+/* "Coming soon": by day a dark-grey block. At night a quiet raised block with muted
+   text, so it reads as "not yet" instead of a bright light-grey button. */
+html.dfs-night .coming_soon { background-color: #1d2944; }
+html.dfs-night .coming_soon .text-color-white { color: var(--brand-colors--80-dark_gray); }
 
 /* Pages without a nav: a small square button in the bottom-left corner. */
 .dfs-night-toggle.is-floating {
