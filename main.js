@@ -2837,23 +2837,27 @@
           .to(capBottom, { scaleY: 0.35, duration: DURATION, ease: "none" }, 0.4);
       }
 
+      // Every visible question answered (the form validation marks what's missing)
       function isFormValid() {
+        if (formEl.__dfsValidate) return formEl.__dfsValidate();
         const name = formEl.querySelector('[name="name"]')?.value.trim() || "";
-        const problems = formEl.querySelectorAll('[name="problems"]:checked').length;
-        const planning = formEl.querySelectorAll('[name="planning"]:checked').length;
-        const nudge = formEl.querySelectorAll('[name="Nudge"]:checked').length;
-        return name.length >= 2 && problems >= 1 && planning >= 1 && nudge >= 1;
+        const picked = (n) => formEl.querySelectorAll(`[name="${n}"]:checked`).length > 0;
+        return name.length >= 2 && picked("problems") && picked("planning") && picked("Nudge");
       }
 
       function readAnswers() {
+        // Button answers send their label; the type-your-own answer sends what was typed
         const problems = [...formEl.querySelectorAll('[name="problems"]:checked')]
           .map(i => i.closest(".radiocheck-field")?.textContent.trim() || i.value);
         const getChecked = (n) => [...formEl.querySelectorAll(`[name="${n}"]:checked`)].map(i => i
           .value);
+        const planning = getChecked("planning")[0] || "";
         return {
           firstName: formEl.querySelector('[name="name"]')?.value.trim() || "",
+          work: getChecked("work")[0] || "",
           problems: problems.join(", "),
-          planning: getChecked("planning")[0] || "",
+          planning: planning,
+          startDay: planning === "Plan" ? (getChecked("start-day")[0] || "") : "",
           nudge: getChecked("Nudge")[0] || "",
         };
       }
@@ -2871,6 +2875,16 @@
 
         const member = res?.data || {};
 
+        // New fields go separately: if they're not set up in Memberstack yet,
+        // the answers above (and "onboarded") are still saved
+        try {
+          await window.$memberstackDom.updateMember({
+            customFields: { "work": data.work, "start-day": data.startDay }
+          });
+        } catch (err) {
+          console.warn("onboarding: work/start-day not saved in Memberstack", err);
+        }
+
         document.querySelectorAll('[data-ms-content="first-name"], [data-ms-member="first-name"]')
           .forEach(el => { el.textContent = data.firstName; });
 
@@ -2882,8 +2896,10 @@
               memberId: member.id || "",
               email: member.auth?.email || "",
               firstName: data.firstName,
+              work: data.work,
               problems: data.problems,
               planning: data.planning,
+              startDay: data.startDay,
               nudge: data.nudge
             })
           });
@@ -3809,11 +3825,20 @@
           }
         });
 
+        // Skip fields that are hidden (e.g. the day picker while "Right now" is picked)
+        function isHidden(el) {
+          return !el.offsetParent && getComputedStyle(el).position !== 'fixed';
+        }
+
         function validateAndStartLiveValidationForAll() {
           let allValid = true;
           let firstInvalidField = null;
 
           validateFields.forEach(function (fieldGroup) {
+            if (isHidden(fieldGroup)) {
+              fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+              return;
+            }
             const input = fieldGroup.querySelector('input, textarea, select');
             const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
             if (!input && !radioCheckGroup) return;
@@ -3902,6 +3927,10 @@
         }
 
         function updateFieldStatus(fieldGroup) {
+          if (isHidden(fieldGroup)) {
+            fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+            return;
+          }
           const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
 
           if (radioCheckGroup) {
@@ -4034,6 +4063,9 @@
             }
           }
         });
+
+        // Exposed so page scripts (course onboarding) can check the whole form
+        form.__dfsValidate = validateAndStartLiveValidationForAll;
 
         if (dataSubmit) {
           dataSubmit.addEventListener('click', function (e) {
