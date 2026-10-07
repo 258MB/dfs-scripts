@@ -11,7 +11,7 @@ Site-wide JavaScript for the Digital Feng Shui website (Webflow), migrated from 
 - `archive/` — old/unused snippets kept for reuse. Not loaded on the site.
 - Served via jsDelivr, pinned to a git tag, as one tag in Webflow
   Site settings → Custom code → Footer (no `defer`):
-  `<script src="https://cdn.jsdelivr.net/gh/Digital-Feng-Shui/dfs-scripts@vX.Y.Z/main.min.js"></script>`
+  `<script src="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@v1.1.1/main.min.js"></script>`
   (jsDelivr builds `main.min.js` from `main.js` automatically)
 
 Not in here (still inline in Webflow): Lenis setup, Meta pixel/events, and
