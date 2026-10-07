@@ -951,21 +951,68 @@
       btnT1.classList.add("is-active");
       currentTState = 1;
 
-      // --- één generieke state-switcher i.p.v. 3x dezelfde functie ---
+      // --- line reveal: oude regels schuiven omhoog weg, nieuwe komen van onder ---
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const imgHidden = 'inset(50% 50% 50% 50%)';
+      const imgVisible = 'inset(0% 0% 0% 0%)';
+      let isAnimating = false;
+
+      const parts = slides.map((slide, i) => {
+        const part = { lines: [], image: slide.querySelector('.testimonial_profile-image') };
+        if (reduceMotion || typeof SplitText === 'undefined') return part;
+        const targets = slide.querySelectorAll('.testimonial_quote, .testimonial_name');
+        const splits = [];
+        targets.forEach((el) => splits.push(SplitText.create(el, {
+          type: 'lines',
+          mask: 'lines',
+          linesClass: 'text-line',
+          autoSplit: true,
+          onSplit(self) {
+            // autoSplit re-splits on resize/font load: gather fresh lines each time
+            part.lines = splits.concat(self).filter((sp, k, a) => sp && a.indexOf(sp) === k).flatMap((sp) => sp.lines);
+            const active = i === currentTState - 1;
+            if (!isAnimating) gsap.set(self.lines, { yPercent: active ? 0 : 110 });
+          }
+        })));
+        part.lines = splits.flatMap((sp) => sp.lines);
+        if (part.image) gsap.set(part.image, { clipPath: i === 0 ? imgVisible : imgHidden });
+        return part;
+      });
+
       function goToState(n) {
-        if (currentTState === n) return;
-        slides.forEach((slide, i) => {
-          const active = i === n - 1;
-          gsap.to(slide, {
-            autoAlpha: active ? 1 : 0,
-            duration: 0.5,
-            pointerEvents: active ? "auto" : "none"
-          });
-        });
+        if (currentTState === n || isAnimating) return;
+        const from = currentTState - 1;
+        const to = n - 1;
+        const out = slides[from];
+        const inc = slides[to];
+        isAnimating = true;
+
         section.querySelectorAll(".t-btn").forEach((b) => b.classList.remove("is-active"));
-        btns[n - 1].classList.add("is-active");
+        btns[to].classList.add("is-active");
         currentTState = n;
         resetProgress();
+
+        const done = () => {
+          gsap.set(out, { autoAlpha: 0, pointerEvents: "none" });
+          gsap.set(inc, { pointerEvents: "auto" });
+          isAnimating = false;
+        };
+
+        if (reduceMotion || !parts[to].lines.length) {
+          gsap.to(out, { autoAlpha: 0, duration: 0.4, ease: "power2" });
+          gsap.fromTo(inc, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: "power2", onComplete: done });
+          return;
+        }
+
+        gsap.set(inc, { autoAlpha: 1 });
+        gsap.set(parts[to].lines, { yPercent: 110 });
+        if (parts[to].image) gsap.set(parts[to].image, { clipPath: imgHidden });
+
+        const tl = gsap.timeline({ onComplete: done });
+        tl.to(parts[from].lines, { yPercent: -110, duration: 0.6, ease: "power4.inOut", stagger: { amount: 0.25 } }, 0);
+        if (parts[from].image) tl.to(parts[from].image, { clipPath: imgHidden, duration: 0.6, ease: "power4.inOut" }, 0);
+        tl.to(parts[to].lines, { yPercent: 0, duration: 0.7, ease: "power4.inOut", stagger: { amount: 0.4 } }, ">-=0.3");
+        if (parts[to].image) tl.to(parts[to].image, { clipPath: imgVisible, duration: 0.75, ease: "power4.inOut" }, "<");
       }
 
       wrapT1.addEventListener("click", () => goToState(1));
