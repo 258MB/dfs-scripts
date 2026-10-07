@@ -110,11 +110,11 @@
   //                                 (value = the date, e.g. 2026-10-12).
   //                                 Text goes into .choice_day-name / .choice_day-number
   //
-  // 4. Extra text field
-  //   input[data-choice-other]      a text field inside a radio group. A button and
-  //                                 typed text can both be given; either is enough
-  //                                 when the question is required. The text is sent
-  //                                 separately as "<group name>-other".
+  // 4. Type-your-own answer
+  //   input[data-choice-other]      a text field inside a radio group, as one more
+  //                                 option: clicking into it switches the buttons off,
+  //                                 picking a button dims it. Only the active one is
+  //                                 sent; the text as "<group name>-other".
   //
   // Required? Put data-validate on the field group (Osmo form validation).
   // =========================================================
@@ -287,35 +287,56 @@
       });
     });
 
-    // 4. Extra text field next to the options. A button and typed text can both be
-    //    given; either one is enough for a required question. The text is sent as
-    //    its own field: "<group name>-other" (e.g. problems-other).
+    // 4. Type-your-own answer, one answer at a time: clicking into the field (or typing)
+    //    switches the buttons off; picking a button switches the field off. Its text stays,
+    //    dimmed (.is-inactive), and isn't sent. The active field is .is-picked and its
+    //    text is sent as "<group name>-other" (e.g. problems-other).
     document.querySelectorAll('input[data-choice-other]').forEach(function (field) {
       const group = field.closest('[data-radiocheck-group]');
       const option = group && group.querySelector('input[type="radio"]');
       if (!option || field.__otherReady) return;
       field.__otherReady = true;
-      field.name = option.name + '-other';
+      const name = option.name + '-other';
+      field.removeAttribute('name'); // only sent while it's the answer
 
-      // A hidden, unnamed radio tells the form validation "answered" when only text is given
+      // A hidden, unnamed radio tells the form validation "answered" when the text is the answer
       const answered = document.createElement('input');
       answered.type = 'radio';
       answered.hidden = true;
       answered.tabIndex = -1;
       field.insertAdjacentElement('afterend', answered);
 
-      function sync() {
-        const buttonPicked = !!group.querySelector('input[type="radio"]:checked:not([hidden])');
-        const onlyText = !buttonPicked && field.value.trim() !== '';
-        if (answered.checked !== onlyText) {
-          answered.checked = onlyText;
+      let active = false;
+
+      function update() {
+        const hasText = field.value.trim() !== '';
+        field.classList.toggle('is-picked', active);
+        field.classList.toggle('is-inactive', !active && hasText);
+        if (active) field.name = name; else field.removeAttribute('name');
+        const isAnswer = active && hasText;
+        if (answered.checked !== isAnswer) {
+          answered.checked = isAnswer;
           answered.dispatchEvent(new Event('change', { bubbles: true }));
         }
       }
 
-      field.addEventListener('input', sync);
+      function activate() {
+        if (!active) {
+          active = true;
+          // Quietly, so the question doesn't flash red before anything is typed
+          group.querySelectorAll('input[type="radio"]:checked:not([hidden])').forEach(function (r) {
+            r.checked = false;
+          });
+        }
+        update();
+      }
+
+      field.addEventListener('click', activate);
+      field.addEventListener('input', activate);
       group.addEventListener('change', function (e) {
-        if (e.target !== answered) sync();
+        if (e.target === answered || !e.target.checked) return;
+        active = false; // a button was picked
+        update();
       });
     });
   }
