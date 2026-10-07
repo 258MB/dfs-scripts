@@ -107,7 +107,8 @@
   // 3. Day picker
   //   [data-choice-dates="next-week"] on a radio group with ONE radio button in
   //                                 it: it becomes Mon–Sun of next week
-  //                                 (value = the date, e.g. 2026-10-12)
+  //                                 (value = the date, e.g. 2026-10-12).
+  //                                 Text goes into .choice_day-name / .choice_day-number
   //
   // Required? Put data-validate on the field group (Osmo form validation).
   // =========================================================
@@ -153,10 +154,17 @@
         input.checked = false;
         tile.dataset.choiceLabel = DAY[day.getDay()] + ' ' + day.getDate() + ' ' + MONTH[day.getMonth()];
 
+        // Day name + number go into the template's own elements (styled in the Designer)
         const label = tile.querySelector('.radiocheck-label, span') || tile;
-        label.innerHTML = '<span class="choice_day-name">' + DAY[day.getDay()] + '</span>' +
-          '<span class="choice_day-number">' + day.getDate() + '</span>';
-        if (label.setAttribute) label.setAttribute('for', input.id);
+        const nameEl = tile.querySelector('.choice_day-name');
+        const numberEl = tile.querySelector('.choice_day-number');
+        if (nameEl && numberEl) {
+          nameEl.textContent = DAY[day.getDay()];
+          numberEl.textContent = day.getDate();
+        } else {
+          label.textContent = DAY[day.getDay()] + ' ' + day.getDate();
+        }
+        label.setAttribute('for', input.id);
 
         template.parentNode.insertBefore(tile, template);
       }
