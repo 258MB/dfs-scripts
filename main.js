@@ -4718,6 +4718,29 @@
   }
 
   // =========================================================
+  // ONE-SHOT RACE BARS — /one-shot-setup hero
+  // The blue "one-shot" bar snaps full, the grey "by hand" bar crawls after it.
+  // Finds the bars by their Webflow classes: .oneshot-race > .oneshot-race_bar
+  // (.is-macro = the fast one). Rename those classes and this stops running.
+  // =========================================================
+  function dfsRaceBars() {
+    if (typeof gsap === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.oneshot-race').forEach(function (race) {
+      var fast = race.querySelectorAll('.oneshot-race_bar.is-macro');
+      var slow = race.querySelectorAll('.oneshot-race_bar:not(.is-macro)');
+
+      gsap.timeline({
+        delay: 0.3,
+        scrollTrigger: { trigger: race, start: 'top 90%' }
+      })
+        .from(fast, { width: 0, duration: 0.35, ease: 'power4.out' })
+        .from(slow, { width: 0, duration: 2.6, ease: 'power1.inOut' }, '<');
+    });
+  }
+
+  // =========================================================
   // Run
   // Page sections run straight away, like the old Slater page scripts did.
   // Global + Home wait for the whole page, like their old "defer" tags.
@@ -4756,6 +4779,7 @@
   onPageReady(function () {
     dfsGlobal();
     if (document.querySelector('[data-line-graph-svg-init]')) initLineGraphSVG();
+    if (document.querySelector('.oneshot-race')) dfsRaceBars();
     if (path === '/' || path === '/course' || path === '/test-zone') dfsHome();
   });
 
