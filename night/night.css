@@ -216,6 +216,15 @@ html.dfs-night svg [fill="#F1EDE2" i] { fill: var(--brand-colors--bage); }
 html.dfs-night svg [stroke="#DFD5C9" i] { stroke: var(--brand-colors--dark-bage); }
 html.dfs-night svg [stroke="#F1EDE2" i] { stroke: var(--brand-colors--bage); }
 
+/* Tool logos in the tech-stack orbit are app icons on a white disc: they keep their own
+   day colours (Notion and Arc are drawn in the site's dark grey, which the rule above
+   would turn light on white), and the whole badge is dimmed a touch, like the photos. */
+html.dfs-night .tech-stack_icon svg [fill="#3D3A35" i] { fill: #3d3a35; }
+html.dfs-night .tech-stack_icon svg [fill="#F1EDE2" i] { fill: #f1ede2; }
+html.dfs-night .tech-stack_icon svg [stroke="#DFD5C9" i] { stroke: #dfd5c9; }
+html.dfs-night .tech-stack_icon svg [stroke="#F1EDE2" i] { stroke: #f1ede2; }
+html.dfs-night .tech-stack_icon { filter: brightness(.88); }
+
 /* Nav boxes (Login, My courses): solid by day; at night they take the same
    see-through glass as the nav bar, so they don't read as dark holes. */
 html.dfs-night .btn-animate-chars__bg.is-sign-in { background-color: rgba(23, 33, 56, .35); }
