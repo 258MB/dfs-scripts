@@ -34,10 +34,11 @@ const STRIPE = {
 };
 const TEST_EMAIL = 'test+ci@example.com';
 
-// Our site files, wherever they are loaded from (jsDelivr tag/branch, or GitHub Pages)
-const REPO_FILE = '(cdn\\.jsdelivr\\.net\\/gh\\/rimbodesigns\\/dfs-scripts@[^/]+|rimbodesigns\\.github\\.io\\/dfs-scripts)\\/';
-const MAIN_SCRIPT = new RegExp(REPO_FILE + 'main(\\.min)?\\.js');
-const STYLES = new RegExp(REPO_FILE + 'styles(\\.min)?\\.css');
+// Our site files, wherever they are loaded from (jsDelivr tag/branch, or GitHub Pages),
+// under the old (rimbodesigns) or the new (Digital-Feng-Shui) owner
+const REPO_FILE = '(cdn\\.jsdelivr\\.net\\/gh\\/(rimbodesigns|digital-feng-shui)\\/dfs-scripts@[^/]+|(rimbodesigns|digital-feng-shui)\\.github\\.io\\/dfs-scripts)\\/';
+const MAIN_SCRIPT = new RegExp(REPO_FILE + 'main(\\.min)?\\.js', 'i');
+const STYLES = new RegExp(REPO_FILE + 'styles(\\.min)?\\.css', 'i');
 const HOTFIX = /dfs_enroll_fix/;
 // Never let these through: tracking, stats, abandoned-cart, captcha
 const BLOCKED = [

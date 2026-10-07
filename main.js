@@ -1,7 +1,7 @@
 /* =========================================================
    Digital Feng Shui — site JavaScript
    Loaded once, site-wide, from Site settings → Footer:
-   <script src="https://rimbodesigns.github.io/dfs-scripts/main.min.js"></script>
+   <script src="https://digital-feng-shui.github.io/dfs-scripts/main.min.js"></script>
    (no defer — see "Run" at the bottom for timing; the GitHub workflow builds
    main.min.js from this file and puts it live only after the tests pass)
 

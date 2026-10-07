@@ -1,7 +1,7 @@
 /* =========================================================
    Digital Feng Shui — site CSS
    Loaded once, site-wide, from Site settings → Head:
-   <link rel="stylesheet" href="https://rimbodesigns.github.io/dfs-scripts/styles.min.css">
+   <link rel="stylesheet" href="https://digital-feng-shui.github.io/dfs-scripts/styles.min.css">
    The GitHub workflow builds styles.min.css and puts it live after the tests pass.
 
    Webflow's own Designer styles stay in Webflow. This file holds the

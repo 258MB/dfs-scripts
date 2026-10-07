@@ -10,10 +10,10 @@ Site-wide JavaScript for the Digital Feng Shui website (Webflow), migrated from 
   Site settings → Head (see below).
 - `archive/` — old/unused snippets kept for reuse. Not loaded on the site.
 - Served from GitHub Pages, which only ever gets a version that passed the tests:
-  - Footer: `<script src="https://rimbodesigns.github.io/dfs-scripts/main.min.js"></script>` (no `defer`)
-  - Head: `<link rel="stylesheet" href="https://rimbodesigns.github.io/dfs-scripts/styles.min.css">`
-  - `https://rimbodesigns.github.io/dfs-scripts/version.json` shows which version is live.
-- Every version is also a git tag, so `cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/...`
+  - Footer: `<script src="https://digital-feng-shui.github.io/dfs-scripts/main.min.js"></script>` (no `defer`)
+  - Head: `<link rel="stylesheet" href="https://digital-feng-shui.github.io/dfs-scripts/styles.min.css">`
+  - `https://digital-feng-shui.github.io/dfs-scripts/version.json` shows which version is live.
+- Every version is also a git tag, so `cdn.jsdelivr.net/gh/Digital-Feng-Shui/dfs-scripts@vX.Y.Z/...`
   keeps working as a fixed copy.
 
 Not in here (still inline in Webflow): Lenis setup, Meta pixel/events, and

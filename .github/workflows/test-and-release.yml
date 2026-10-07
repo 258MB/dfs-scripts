@@ -50,7 +50,7 @@ jobs:
 
   release:
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'rimbodesigns/dfs-scripts'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'Digital-Feng-Shui/dfs-scripts'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:
