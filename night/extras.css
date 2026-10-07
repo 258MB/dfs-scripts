@@ -189,12 +189,17 @@ html.dfs-night .btn-icon-link.is-dashb .btn-icon-content.is-bleu_course:not(.is-
 }
 html.dfs-night .btn-icon-link.is-dashb .btn-icon-content.is-bleu_course:not(.is-full_split):hover { color: #8fd3f5; }
 
+/* Lesson navigation: by day Previous is light (outline) and Next is the dark one. At
+   night they'd swap; keep Next the stronger one with its own raised night blue. */
+html.dfs-night .cnb_option.is-dark { background-color: #25324f; color: #f2eee5; }
+html.dfs-night .cnb_option.is-dark:hover { background-color: #2e3d60; }
+
 /* "Coming soon": by day a dark-grey block. At night a quiet raised block with muted
    text, so it reads as "not yet" instead of a bright light-grey button. */
 html.dfs-night .coming_soon { background-color: #1d2944; }
 html.dfs-night .coming_soon .text-color-white { color: var(--brand-colors--80-dark_gray); }
 
-/* Pages without a nav: a small square button in the bottom-left corner. */
+/* The toggle: a small square button in the bottom-left corner, on every page. */
 .dfs-night-toggle.is-floating {
   position: fixed; left: 1rem; bottom: 1rem; z-index: 50;
   width: 2.75rem; height: 2.75rem;
@@ -202,5 +207,3 @@ html.dfs-night .coming_soon .text-color-white { color: var(--brand-colors--80-da
   background-color: var(--brand-colors--bage);
 }
 
-/* Phone: a narrower toggle, so the nav doesn't get squeezed. */
-@media screen and (max-width: 479px) { .dfs-night-toggle:not(.is-floating) { width: 3rem; } }

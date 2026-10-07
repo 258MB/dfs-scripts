@@ -45,14 +45,9 @@
     btn.setAttribute('aria-pressed', isNight() ? 'true' : 'false');
   }
   label();
-  // In the nav (before Login); pages with a smaller nav get it before their one
-  // button; pages without a nav get a small button in the bottom-left corner.
-  var nav = document.querySelector('.navbar_account');
-  var bar = document.querySelector('.navbar_container');
-  var lone = bar && bar.querySelector(':scope > .btn-animate-chars');
-  if (nav) nav.insertBefore(btn, nav.firstChild);
-  else if (lone) lone.parentNode.insertBefore(btn, lone);
-  else { btn.classList.add('is-floating'); document.body.appendChild(btn); }
+  // The same place on every page: a small square button in the bottom-left corner.
+  btn.classList.add('is-floating');
+  document.body.appendChild(btn);
 
   function set(night) {
     if (night === isNight()) return;

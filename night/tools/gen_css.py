@@ -140,6 +140,10 @@ def remap_value(v):
 # (e.g. the red `.form-field-icon.is--error` over the night `.form-field-icon`).
 WHERE = ':where(html.dfs-night)'
 
+# Parts that stay exactly as by day at night: the video player is already dark, with
+# white icons and a black fade, so flipping it would make it light.
+SKIP = re.compile(r'bunny-player')
+
 
 def scope_selector(sel):
     parts = []
@@ -159,6 +163,8 @@ def rules(nodes):
     for n in nodes:
         if n.type == 'qualified-rule':
             sel = tinycss2.serialize(n.prelude).strip()
+            if SKIP.search(sel):
+                continue
             decls = tinycss2.parse_declaration_list(n.content, skip_whitespace=True, skip_comments=True)
             new = []
             for d in decls:
