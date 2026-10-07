@@ -79,7 +79,6 @@ html.dfs-night .parallax-bg::after {
   color: var(--brand-colors--dark_gray);
   cursor: pointer; position: relative;
 }
-.dfs-night-toggle:hover { background-color: var(--brand-colors--light-bleu); }
 .dfs-night-toggle:focus-visible { outline: 1px solid var(--brand-colors--blue); outline-offset: -4px; }
 .dfs-night-toggle svg { width: 18px; height: 18px; shape-rendering: crispEdges; display: block; }
 .dfs-night-toggle .dfs-sun { display: none; }
