@@ -360,15 +360,27 @@ html.dfs-night .panel-cap-bottom {
     repeating-linear-gradient(to bottom, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem);
 }
 
-/* Dashboard course covers: the light mountain print gets a moonlit tint (like the chapter
-   illustrations); the title and logo on it keep their day ink. */
+/* Dashboard course covers: the mountain print gets the same moonlit tint as the chapter
+   illustrations, with everything on it in white (title, logo and course label). */
 html.dfs-night .cover_course-card::after {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: #8b9bc2; mix-blend-mode: multiply;
+  background: #5f719c; mix-blend-mode: multiply;
 }
 html.dfs-night .cover_course-card .course_title,
-html.dfs-night .cover_course-card .logo_icon { color: #3d3a35; }
-html.dfs-night .cover_course-card .logo_icon svg [fill="#3D3A35" i] { fill: #3d3a35; }
+html.dfs-night .cover_course-card .logo_icon { color: #f2eee5; }
+html.dfs-night .cover_course-card .logo_icon svg [fill="#3D3A35" i] { fill: #f2eee5; }
+html.dfs-night .cover_course-card .course_tag,
+html.dfs-night .cover_course-card .course_tag.orange { color: #f2eee5; }
+
+/* Card corner arrow: highlight blue with a dark arrow (hover turns it dark blue, see the
+   dashboard script). Courses that aren't open yet (combo class is-inactive, or a
+   "Coming soon" on the card) get the same quiet grey-blue as their button. */
+html.dfs-night .click_indicator_cr { background-color: #8fd3f5; border-color: #8fd3f5; }
+html.dfs-night .click_indicator_cr .cr_arrow { color: #0e1628; }
+html.dfs-night .click_indicator_cr.is-inactive,
+html.dfs-night .course_card:has(.coming_soon) .click_indicator_cr { background-color: #1d2944; border-color: #1d2944; }
+html.dfs-night .click_indicator_cr.is-inactive .cr_arrow,
+html.dfs-night .course_card:has(.coming_soon) .click_indicator_cr .cr_arrow { color: var(--brand-colors--ll-gray); }
 
 /* "Coming soon": by day a dark-grey block. At night a quiet raised block with muted
    text, so it reads as "not yet" instead of a bright light-grey button. */

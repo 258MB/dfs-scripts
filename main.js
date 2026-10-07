@@ -3040,6 +3040,8 @@
       const arrowBox = card.querySelector('[cc_arwbox]');
       const arrowIcon = card.querySelector('.cr_arrow');
       if (!arrowBox) return;
+      // Courses that aren't open yet don't light up on hover
+      if (arrowBox.classList.contains('is-inactive') || card.querySelector('.coming_soon')) return;
 
       // Colours come from the brand variables at hover time, so they follow day/night
       // mode; after hover the inline colours are cleared again (otherwise a colour from
