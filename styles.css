@@ -504,3 +504,22 @@ input:-webkit-autofill:focus {
 [data-choice].is-filled [data-choice-value] {
   opacity: 1;
 }
+
+/* Panel that opens for one answer ("Plan"): closed until that answer is picked */
+.w-mod-js [data-choice-reveal] {
+  display: none;
+  overflow: hidden;
+}
+
+/* Day picker tiles (built by the script from one template radio) */
+[data-choice-dates] .choice_day-name {
+  display: block;
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+[data-choice-dates] .choice_day-number {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.4em;
+}

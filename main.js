@@ -90,17 +90,81 @@
   }
 
   // =========================================================
-  // CHOICE FIELDS — collapsible "pick one" fields, built in the Designer
-  // Structure (any page):
+  // CHOICE FIELDS — form pieces built in the Designer, wired up by attributes
+  //
+  // 1. Collapsible "pick one" field
   //   [data-choice]                 the field group
   //     [data-choice-toggle]        looks like an input; click to open/close
   //       [data-choice-value]       shows "Choose one", then the picked option
   //       [data-choice-arrow]       flips when open
   //     [data-choice-panel]         slides open; holds normal Osmo radio buttons
-  // Picking an option fills in the field and closes the panel. Works with the
-  // Osmo form validation (put data-validate on the group to make it required).
+  //
+  // 2. Panel that opens for one answer
+  //   [data-choice-reveal="Plan"]   opens while the radio with value "Plan"
+  //                                 (in the same field group) is picked
+  //
+  // 3. Day picker
+  //   [data-choice-dates="next-week"] on a radio group with ONE radio button in
+  //                                 it: it becomes Mon–Sun of next week
+  //                                 (value = the date, e.g. 2026-10-12)
+  //
+  // Required? Put data-validate on the field group (Osmo form validation).
   // =========================================================
+
+  // Lenis caches the page height, so tell it when something grows or shrinks
+  function relayoutScroll() {
+    if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
+  }
+
+  // Webflow's API can only set data-name on radios; the browser groups radios
+  // by name. Copy data-name over so one answer per question can be picked.
+  function syncRadioNames(root) {
+    root.querySelectorAll('input[type="radio"][data-name]').forEach(function (input) {
+      if (input.name !== input.dataset.name) input.name = input.dataset.name;
+    });
+  }
+
+  function dfsChoiceDates() {
+    const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad = (n) => (n < 10 ? '0' : '') + n;
+
+    document.querySelectorAll('[data-choice-dates="next-week"]').forEach(function (group) {
+      const firstInput = group.querySelector('input[type="radio"]');
+      const template = firstInput && firstInput.closest('label');
+      if (!template || group.__datesReady) return;
+      group.__datesReady = true;
+
+      // Monday of next week (also when today is a Monday)
+      const monday = new Date();
+      monday.setHours(0, 0, 0, 0);
+      monday.setDate(monday.getDate() + (((8 - monday.getDay()) % 7) || 7));
+
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(monday);
+        day.setDate(monday.getDate() + i);
+        const iso = day.getFullYear() + '-' + pad(day.getMonth() + 1) + '-' + pad(day.getDate());
+
+        const tile = template.cloneNode(true);
+        const input = tile.querySelector('input[type="radio"]');
+        input.value = iso;
+        input.id = (input.dataset.name || 'day') + '-' + iso;
+        input.checked = false;
+        tile.dataset.choiceLabel = DAY[day.getDay()] + ' ' + day.getDate() + ' ' + MONTH[day.getMonth()];
+
+        const label = tile.querySelector('.radiocheck-label, span') || tile;
+        label.innerHTML = '<span class="choice_day-name">' + DAY[day.getDay()] + '</span>' +
+          '<span class="choice_day-number">' + day.getDate() + '</span>';
+        if (label.setAttribute) label.setAttribute('for', input.id);
+
+        template.parentNode.insertBefore(tile, template);
+      }
+      template.remove();
+    });
+  }
+
   function dfsChoiceFields() {
+    // 1. Collapsible "pick one" fields
     document.querySelectorAll('[data-choice]').forEach(function (field) {
       const toggle = field.querySelector('[data-choice-toggle]');
       const panel = field.querySelector('[data-choice-panel]');
@@ -111,11 +175,6 @@
       const placeholder = value ? value.textContent : '';
       let open = false;
 
-      // Lenis caches the page height, so tell it when the field grows or shrinks
-      function relayout() {
-        if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
-      }
-
       function setOpen(next) {
         if (next === open) return;
         open = next;
@@ -125,7 +184,7 @@
           height: open ? 'auto' : 0,
           duration: open ? 0.45 : 0.35,
           ease: open ? 'power2.out' : 'power2.inOut',
-          onComplete: relayout
+          onComplete: relayoutScroll
         });
       }
 
@@ -140,7 +199,7 @@
         const input = e.target;
         if (!input.matches('input[type="radio"]') || !input.checked) return;
         const label = input.closest('label');
-        const text = label ? label.textContent.trim() : input.value;
+        const text = label ? (label.dataset.choiceLabel || label.textContent.trim()) : input.value;
         if (value) value.textContent = text || placeholder;
         field.classList.add('is-filled');
         setTimeout(function () { setOpen(false); }, 200);
@@ -149,6 +208,44 @@
       // Clicking anywhere else closes it
       document.addEventListener('click', function (e) {
         if (open && !field.contains(e.target)) setOpen(false);
+      });
+    });
+
+    // 2. Panels that open for one answer (e.g. "Plan" → pick a day)
+    document.querySelectorAll('[data-choice-reveal]').forEach(function (reveal) {
+      if (reveal.__revealReady) return;
+      reveal.__revealReady = true;
+
+      const answer = reveal.getAttribute('data-choice-reveal');
+      const group = reveal.closest('[data-validate]') || reveal.parentElement;
+      let open = false;
+
+      function setOpen(next) {
+        if (next === open) return;
+        open = next;
+        reveal.classList.toggle('is-open', open);
+        if (open) {
+          reveal.style.display = 'block';
+          gsap.fromTo(reveal, { height: 0 }, {
+            height: 'auto', duration: 0.5, ease: 'power2.out', onComplete: relayoutScroll
+          });
+        } else {
+          // Leaving this answer: forget the picks inside the panel
+          reveal.querySelectorAll('input:checked').forEach(function (i) { i.checked = false; });
+          reveal.querySelectorAll('[data-validate]').forEach(function (g) {
+            g.classList.remove('is--error', 'is--success', 'is--filled');
+          });
+          gsap.to(reveal, {
+            height: 0, duration: 0.35, ease: 'power2.inOut',
+            onComplete: function () { reveal.style.display = 'none'; relayoutScroll(); }
+          });
+        }
+      }
+
+      group.addEventListener('change', function (e) {
+        const input = e.target;
+        if (!input.matches('input[type="radio"]') || reveal.contains(input)) return;
+        setOpen(input.checked && input.value === answer);
       });
     });
   }
@@ -3515,7 +3612,8 @@
             if (f.type === 'checkbox' || f.type === 'radio') {
               if (!f.checked) return;
               var label = f.closest('.radiocheck-field');
-              var val = label ? label.textContent.trim() : f.value;
+              // Day picker: send the date itself (2026-10-12), not "Mon 12"
+              var val = label && !f.closest('[data-choice-dates]') ? label.textContent.trim() : f.value;
               data[f.name] = data[f.name] ? data[f.name] + ', ' + val : val;
               return;
             }
@@ -3957,6 +4055,11 @@
   // =========================================================
   var path = location.pathname.replace(/\/+$/, '') || '/';
 
+  // Form pieces first, so the form validation below sees the final radio buttons
+  syncRadioNames(document);
+  dfsChoiceDates();
+  dfsChoiceFields();
+
   var AUTH_PAGES = ['/login', '/sign-up', '/create-account', '/create-account-2',
     '/forgot-password', '/reset-password'];
 
@@ -3983,7 +4086,6 @@
 
   onPageReady(function () {
     dfsGlobal();
-    dfsChoiceFields();
     if (path === '/' || path === '/course' || path === '/test-zone') dfsHome();
   });
 
