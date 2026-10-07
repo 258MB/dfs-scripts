@@ -134,6 +134,12 @@ def remap_value(v):
     return out, changed
 
 
+# The night twins carry no extra weight: `:where()` scores zero, so a night rule
+# weighs exactly what its day rule weighs and day modifiers keep winning
+# (e.g. the red `.form-field-icon.is--error` over the night `.form-field-icon`).
+WHERE = ':where(html.dfs-night)'
+
+
 def scope_selector(sel):
     parts = []
     for s in sel.split(','):
@@ -141,9 +147,9 @@ def scope_selector(sel):
         if not s:
             continue
         if re.match(r'^(html|:root)\b', s):
-            parts.append(re.sub(r'^(html|:root)', SCOPE, s, count=1))
+            parts.append(re.sub(r'^(html|:root)', 'html:where(.dfs-night)', s, count=1))
         else:
-            parts.append(f'{SCOPE} {s}')
+            parts.append(f'{WHERE} {s}')
     return ','.join(parts)
 
 
