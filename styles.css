@@ -515,3 +515,42 @@ input:-webkit-autofill:focus {
   display: none;
   overflow: hidden;
 }
+
+/* =========================================================
+   ONBOARDING OVERLAY — a form taller than the screen scrolls inside the overlay
+   (the feedback overlay, .is-feedback, already scrolls and is left alone)
+   ========================================================= */
+.onboarding-overlay:not(.is-feedback) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.onboarding-overlay:not(.is-feedback) .transition-panel {
+  position: fixed; /* the background stays put while the form scrolls over it */
+}
+
+.onboarding-overlay:not(.is-feedback) .onboarding-form {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+/* =========================================================
+   DASHBOARD — courses that aren't open yet (a "Coming soon" on the card, or the
+   combo class is-inactive on the corner): grey corner arrow, cover not clickable
+   ========================================================= */
+.course_card:has(.coming_soon) .click_indicator_cr,
+.click_indicator_cr.is-inactive {
+  background-color: var(--brand-colors--bage);
+  border-color: var(--brand-colors--dark-bage);
+}
+
+.course_card:has(.coming_soon) .click_indicator_cr .cr_arrow,
+.click_indicator_cr.is-inactive .cr_arrow {
+  color: var(--brand-colors--ll-gray);
+}
+
+.course_card:has(.coming_soon) .cover_course-card {
+  cursor: default;
+  pointer-events: none;
+}

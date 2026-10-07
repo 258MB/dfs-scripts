@@ -77,6 +77,8 @@
     gsap.set(o.capBottom, { scaleY: 1 });
     if (o.content) gsap.set(o.content, { autoAlpha: 0, y: 20 });
     o.overlay.style.display = 'block';
+    // Let the wheel/touch scroll the overlay itself (Lenis would otherwise take it)
+    o.overlay.setAttribute('data-lenis-prevent', '');
     if (o.lockScroll) document.body.style.overflow = 'hidden';
 
     const tl = gsap.timeline()
