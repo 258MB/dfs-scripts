@@ -1016,13 +1016,13 @@
 
         gsap.set(inc, { autoAlpha: 1 });
         gsap.set(parts[to].lines, { yPercent: 110 });
-        if (parts[to].image) gsap.set(parts[to].image, { clipPath: imgHidden });
 
         const tl = gsap.timeline({ onComplete: done });
         tl.to(parts[from].lines, { yPercent: -110, duration: 0.6, ease: "power4.inOut", stagger: { amount: 0.25 } }, 0);
-        if (parts[from].image) tl.to(parts[from].image, { clipPath: imgHidden, duration: 0.6, ease: "power4.inOut" }, 0);
+        // fromTo with both values spelled out: the browser shortens inset(50% 50% 50% 50%) to inset(50%), which GSAP can't tween from
+        if (parts[from].image) tl.fromTo(parts[from].image, { clipPath: imgVisible }, { clipPath: imgHidden, duration: 0.6, ease: "power4.inOut" }, 0);
         tl.to(parts[to].lines, { yPercent: 0, duration: 0.7, ease: "power4.inOut", stagger: { amount: 0.4 } }, ">-=0.3");
-        if (parts[to].image) tl.to(parts[to].image, { clipPath: imgVisible, duration: 0.75, ease: "power4.inOut" }, "<");
+        if (parts[to].image) tl.fromTo(parts[to].image, { clipPath: imgHidden }, { clipPath: imgVisible, duration: 0.75, ease: "power4.inOut", immediateRender: true }, "<");
       }
 
       wrapT1.addEventListener("click", () => goToState(1));
