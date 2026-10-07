@@ -351,6 +351,13 @@ html.dfs-night .btn-icon-icon__bg.is-dark ~ .btn-icon-icon__wrap { color: #0e162
 /* Instructor photo: the same moonlit blue as the chapter illustrations. */
 html.dfs-night .instructor_image { filter: brightness(.8) sepia(.3) hue-rotate(185deg) saturate(.9); }
 
+/* Login / sign-up backdrop: night version of the same mountains (recoloured, no AI). */
+html.dfs-night .sing_in_bg { background-image: url(large_BG3-night.webp); }
+
+/* Blue buttons and picked answers keep light text at night, like by day. */
+html.dfs-night .form-submit-btn,
+html.dfs-night .radiocheck-field.is-boxed:has(input:checked) .radiocheck-label.is-boxed { color: #f6f2e9; }
+
 /* Pages without a nav: a small square button in the bottom-left corner. */
 .dfs-night-toggle.is-floating {
   position: fixed; left: 1rem; bottom: 1rem; z-index: 50;
