@@ -142,6 +142,10 @@ html.dfs-night .money-back_star { opacity: .35; }
    night ink, so it isn't white on light ("Learn more"). */
 html.dfs-night .btn-icon-icon__bg.is-dark ~ .btn-icon-icon__wrap { color: #0e1628; }
 
+/* Text on top of a photo ("You're The Product Of Your Systems") stays light, as by day:
+   it uses the page-beige variable, which turns navy at night. */
+html.dfs-night .mac_text.is-5 { color: #fbf7ee; }
+
 /* Instructor photo: the same moonlit blue as the chapter illustrations. */
 html.dfs-night .instructor_image { filter: brightness(.8) sepia(.3) hue-rotate(185deg) saturate(.9); }
 
