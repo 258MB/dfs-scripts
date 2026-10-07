@@ -90,6 +90,70 @@
   }
 
   // =========================================================
+  // CHOICE FIELDS — collapsible "pick one" fields, built in the Designer
+  // Structure (any page):
+  //   [data-choice]                 the field group
+  //     [data-choice-toggle]        looks like an input; click to open/close
+  //       [data-choice-value]       shows "Choose one", then the picked option
+  //       [data-choice-arrow]       flips when open
+  //     [data-choice-panel]         slides open; holds normal Osmo radio buttons
+  // Picking an option fills in the field and closes the panel. Works with the
+  // Osmo form validation (put data-validate on the group to make it required).
+  // =========================================================
+  function dfsChoiceFields() {
+    document.querySelectorAll('[data-choice]').forEach(function (field) {
+      const toggle = field.querySelector('[data-choice-toggle]');
+      const panel = field.querySelector('[data-choice-panel]');
+      const value = field.querySelector('[data-choice-value]');
+      if (!toggle || !panel || field.__choiceReady) return;
+      field.__choiceReady = true;
+
+      const placeholder = value ? value.textContent : '';
+      let open = false;
+
+      // Lenis caches the page height, so tell it when the field grows or shrinks
+      function relayout() {
+        if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
+      }
+
+      function setOpen(next) {
+        if (next === open) return;
+        open = next;
+        field.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        gsap.to(panel, {
+          height: open ? 'auto' : 0,
+          duration: open ? 0.45 : 0.35,
+          ease: open ? 'power2.out' : 'power2.inOut',
+          onComplete: relayout
+        });
+      }
+
+      toggle.addEventListener('click', function () { setOpen(!open); });
+      toggle.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); }
+        if (e.key === 'Escape') setOpen(false);
+      });
+
+      // Picking an option: show it in the field, then close
+      panel.addEventListener('change', function (e) {
+        const input = e.target;
+        if (!input.matches('input[type="radio"]') || !input.checked) return;
+        const label = input.closest('label');
+        const text = label ? label.textContent.trim() : input.value;
+        if (value) value.textContent = text || placeholder;
+        field.classList.add('is-filled');
+        setTimeout(function () { setOpen(false); }, 200);
+      });
+
+      // Clicking anywhere else closes it
+      document.addEventListener('click', function (e) {
+        if (open && !field.contains(e.target)) setOpen(false);
+      });
+    });
+  }
+
+  // =========================================================
   // GLOBAL — every page
   // (was Slater GLOBAL.js)
   // =========================================================
@@ -3919,6 +3983,7 @@
 
   onPageReady(function () {
     dfsGlobal();
+    dfsChoiceFields();
     if (path === '/' || path === '/course' || path === '/test-zone') dfsHome();
   });
 

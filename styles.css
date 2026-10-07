@@ -481,3 +481,26 @@ input:-webkit-autofill:focus {
   position: absolute;
   border-radius: var(--blk-radius);
 }
+
+/* =========================================================
+   CHOICE FIELDS — collapsible "pick one" field (see dfsChoiceFields in main.js)
+   Closed until clicked. Without JavaScript (and in the Designer) the panel
+   simply stays open, so the options are always reachable.
+   ========================================================= */
+
+.w-mod-js [data-choice-panel] {
+  height: 0;
+  overflow: hidden;
+}
+
+[data-choice-arrow] {
+  transition: transform 0.3s ease;
+}
+
+[data-choice].is-open [data-choice-arrow] {
+  transform: rotate(180deg);
+}
+
+[data-choice].is-filled [data-choice-value] {
+  opacity: 1;
+}
