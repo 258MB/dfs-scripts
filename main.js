@@ -232,12 +232,16 @@
         } else {
           // Leaving this answer: forget the picks inside the panel
           reveal.querySelectorAll('input:checked').forEach(function (i) { i.checked = false; });
-          reveal.querySelectorAll('[data-validate]').forEach(function (g) {
-            g.classList.remove('is--error', 'is--success', 'is--filled');
-          });
           gsap.to(reveal, {
             height: 0, duration: 0.35, ease: 'power2.inOut',
-            onComplete: function () { reveal.style.display = 'none'; relayoutScroll(); }
+            onComplete: function () {
+              reveal.style.display = 'none';
+              // Clear red/green states once hidden, so reopening starts fresh
+              reveal.querySelectorAll('[data-validate]').forEach(function (g) {
+                g.classList.remove('is--error', 'is--success', 'is--filled');
+              });
+              relayoutScroll();
+            }
           });
         }
       }
