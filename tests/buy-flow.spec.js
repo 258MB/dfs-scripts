@@ -59,7 +59,11 @@ const BLOCKED = [
 const WEBFLOW_FORM = /webflow\.com\/api\/v1\/form\//;
 
 // Errors from other people's scripts that we can't fix here (keep this list short).
-const IGNORED_ERRORS = [];
+const IGNORED_ERRORS = [
+  // Memberstack refuses its member check on the staging domain in Safari/WebKit (CORS);
+  // happens with and without our code, not part of the buy flow.
+  /client\.memberstack\.com\/app-member due to access control checks/,
+];
 
 const dist = (f) => fs.readFileSync(path.join(__dirname, '..', 'dist', f), 'utf8');
 const builtScript = BUILD_MODE ? dist('main.min.js') : null;
