@@ -1064,12 +1064,20 @@
       const marquees = qa('[data-css-marquee]');
       if (!marquees.length) return;
 
-      // Duplicate each list inside its container
+      // Copy the list until it fills the widest screen the marquee may stretch to
+      // (one copy was too short on very wide screens, so its end came into view)
       marquees.forEach(marquee => {
-        marquee.querySelectorAll('[data-css-marquee-list]').forEach(list => {
-          const duplicate = list.cloneNode(true);
-          marquee.appendChild(duplicate);
-        });
+        const originals = [...marquee.querySelectorAll('[data-css-marquee-list]')];
+        const listWidth = originals.reduce((w, list) => w + list.offsetWidth, 0);
+        const wide = Math.max(marquee.offsetWidth, window.screen ? screen.width : 0);
+        const copies = listWidth ? Math.max(1, Math.ceil(wide / listWidth)) : 1;
+        for (let i = 0; i < copies; i++) {
+          originals.forEach(list => {
+            const duplicate = list.cloneNode(true);
+            duplicate.setAttribute('aria-hidden', 'true');
+            marquee.appendChild(duplicate);
+          });
+        }
       });
 
       // Pause/run based on whether the marquee is in view
