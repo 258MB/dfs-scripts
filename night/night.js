@@ -45,9 +45,14 @@
     btn.setAttribute('aria-pressed', isNight() ? 'true' : 'false');
   }
   label();
-  // The same place on every page: a small square button in the bottom-left corner.
-  btn.classList.add('is-floating');
-  document.body.appendChild(btn);
+  // Always right next to the nav's right-hand button (Login / Logout / My courses).
+  // Pages without a nav get a small button in the bottom-left corner instead.
+  var group = document.querySelector('.navbar_account');
+  var bar = document.querySelector('.navbar_container');
+  var lone = bar && bar.querySelector(':scope > .btn-animate-chars');
+  if (group) group.insertBefore(btn, group.firstChild);
+  else if (lone) { btn.classList.add('is-pushed'); lone.parentNode.insertBefore(btn, lone); }
+  else { btn.classList.add('is-floating'); document.body.appendChild(btn); }
 
   function set(night) {
     if (night === isNight()) return;

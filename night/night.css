@@ -393,11 +393,18 @@ html.dfs-night .cnb_option.is-dark:hover { background-color: #2e3d60; }
 html.dfs-night .coming_soon { background-color: #1d2944; }
 html.dfs-night .coming_soon .text-color-white { color: var(--brand-colors--80-dark_gray); }
 
-/* The toggle: a small square button in the bottom-left corner, on every page. */
+/* A nav with a single button (login, course page): the toggle sits right against that
+   button on the right, instead of floating to the middle. */
+.dfs-night-toggle.is-pushed { margin-left: auto; }
+
+/* Pages without a nav: a small square button in the bottom-left corner, above the page
+   (but under the onboarding/feedback overlays). */
 .dfs-night-toggle.is-floating {
-  position: fixed; left: 1rem; bottom: 1rem; z-index: 50;
+  position: fixed; left: 1rem; bottom: 1rem; z-index: 9000;
   width: 2.75rem; height: 2.75rem;
   border: 1px solid var(--brand-colors--dark-bage); border-radius: .25rem;
   background-color: var(--brand-colors--bage);
 }
 
+/* Phone: a narrower toggle in the nav, so the nav doesn't get squeezed. */
+@media screen and (max-width: 479px) { .dfs-night-toggle:not(.is-floating) { width: 3rem; } }
