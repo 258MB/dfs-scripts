@@ -181,6 +181,14 @@ html.dfs-night .course_card:has(.coming_soon) .click_indicator_cr { background-c
 html.dfs-night .click_indicator_cr.is-inactive .cr_arrow,
 html.dfs-night .course_card:has(.coming_soon) .click_indicator_cr .cr_arrow { color: var(--brand-colors--ll-gray); }
 
+/* Dashboard "Go to course": the same highlight blue as the corner arrow, with dark text;
+   on hover the dark-blue fill slides in (as by day) and the text turns highlight blue.
+   Only this button for now, not the Enroll button in the same spot (is-full_split). */
+html.dfs-night .btn-icon-link.is-dashb .btn-icon-content.is-bleu_course:not(.is-full_split) {
+  background-color: #8fd3f5; border-color: #8fd3f5; color: #0e1628;
+}
+html.dfs-night .btn-icon-link.is-dashb .btn-icon-content.is-bleu_course:not(.is-full_split):hover { color: #8fd3f5; }
+
 /* "Coming soon": by day a dark-grey block. At night a quiet raised block with muted
    text, so it reads as "not yet" instead of a bright light-grey button. */
 html.dfs-night .coming_soon { background-color: #1d2944; }
