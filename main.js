@@ -110,6 +110,13 @@
   //                                 (value = the date, e.g. 2026-10-12).
   //                                 Text goes into .choice_day-name / .choice_day-number
   //
+  // 4. Type-your-own answer
+  //   input[data-choice-other]      a text field inside a radio group that is
+  //                                 itself an option: typing picks it (the other
+  //                                 options unselect), picking an option unselects
+  //                                 it. The typed text is sent as the answer.
+  //                                 Gets .is-picked while it is the answer.
+  //
   // Required? Put data-validate on the field group (Osmo form validation).
   // =========================================================
 
@@ -273,6 +280,40 @@
           const field = reveal.querySelector('input[type="text"], textarea');
           if (field) setTimeout(function () { field.focus({ preventScroll: true }); }, 300);
         }
+      });
+    });
+
+    // 4. Type-your-own answer (a text field that is one of the radio options)
+    document.querySelectorAll('input[data-choice-other]').forEach(function (field) {
+      const group = field.closest('[data-radiocheck-group]');
+      const option = group && group.querySelector('input[type="radio"]');
+      if (!option || field.__otherReady) return;
+      field.__otherReady = true;
+
+      // A hidden radio carries the typed text, so the form sees it as a picked option
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = option.name;
+      radio.hidden = true;
+      radio.tabIndex = -1;
+      field.insertAdjacentElement('afterend', radio);
+      field.removeAttribute('name'); // sent through the radio only
+
+      function pick() {
+        const text = field.value.trim();
+        radio.value = text;
+        if (radio.checked !== !!text) {
+          radio.checked = !!text;
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        field.classList.toggle('is-picked', !!text);
+      }
+
+      field.addEventListener('input', pick);
+      field.addEventListener('click', pick);
+      // Picking one of the buttons: the typed text stays, but is no longer the answer
+      group.addEventListener('change', function (e) {
+        if (e.target !== radio) field.classList.toggle('is-picked', radio.checked);
       });
     });
   }
