@@ -554,3 +554,32 @@ input:-webkit-autofill:focus {
   cursor: default;
   pointer-events: none;
 }
+
+/* =========================================================
+   LINE GRAPH — Osmo "Interactive Line Graph SVG" (one-shot-setup page)
+   The classes are styled in the Designer; these are the colour tokens
+   and the hover/tooltip states the script switches.
+   ========================================================= */
+.line-graph-svg {
+  --graph-bg: #F1F0ED;
+  --graph-grid: #DEDDE0;
+  --graph-text: #6D6A70;
+  --graph-line-default: #C4C1B9;
+  --graph-series-color: var(--graph-line-default);
+}
+
+.line-graph-svg__hover[data-graph-hover-status="not-active"] {
+  opacity: 0;
+}
+
+.line-graph-svg__tooltip {
+  transition: opacity .3s ease;
+}
+
+.line-graph-svg__tooltip[data-graph-tooltip-status="active"] {
+  opacity: 1;
+}
+
+.line-graph-svg__tooltip[data-graph-tooltip-move="true"] {
+  transition: left .8s cubic-bezier(.32, .72, 0, 1), top .8s cubic-bezier(.32, .72, 0, 1), opacity .3s ease;
+}
