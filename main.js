@@ -962,7 +962,16 @@
         if (reduceMotion || typeof SplitText === 'undefined') return part;
         const targets = slide.querySelectorAll('.testimonial_quote, .testimonial_name');
         const splits = [];
-        targets.forEach((el) => splits.push(SplitText.create(el, {
+        targets.forEach((el) => {
+          // SplitText can't find lines in a flex/grid box: split an inner block instead
+          if (/flex|grid/.test(getComputedStyle(el).display)) {
+            const inner = document.createElement('div');
+            inner.style.width = '100%';
+            while (el.firstChild) inner.appendChild(el.firstChild);
+            el.appendChild(inner);
+            el = inner;
+          }
+          splits.push(SplitText.create(el, {
           type: 'lines',
           mask: 'lines',
           linesClass: 'text-line',
@@ -973,7 +982,8 @@
             const active = i === currentTState - 1;
             if (!isAnimating) gsap.set(self.lines, { yPercent: active ? 0 : 110 });
           }
-        })));
+        }));
+        });
         part.lines = splits.flatMap((sp) => sp.lines);
         if (part.image) gsap.set(part.image, { clipPath: i === 0 ? imgVisible : imgHidden });
         return part;
