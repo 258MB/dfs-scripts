@@ -100,8 +100,9 @@
   //     [data-choice-panel]         slides open; holds normal Osmo radio buttons
   //
   // 2. Panel that opens for one answer
-  //   [data-choice-reveal="Plan"]   opens while the radio with value "Plan"
-  //                                 (in the same field group) is picked
+  //   [data-choice-reveal="Plan"]   opens while the radio/checkbox with value
+  //                                 "Plan" (in the same field group) is picked.
+  //                                 Also for "Something else" + a text field.
   //
   // 3. Day picker
   //   [data-choice-dates="next-week"] on a radio group with ONE radio button in
@@ -230,8 +231,9 @@
             height: 'auto', duration: 0.5, ease: 'power2.out', onComplete: relayoutScroll
           });
         } else {
-          // Leaving this answer: forget the picks inside the panel
+          // Leaving this answer: forget what was picked or typed inside the panel
           reveal.querySelectorAll('input:checked').forEach(function (i) { i.checked = false; });
+          reveal.querySelectorAll('input[type="text"], input:not([type]), textarea').forEach(function (i) { i.value = ''; });
           gsap.to(reveal, {
             height: 0, duration: 0.35, ease: 'power2.inOut',
             onComplete: function () {
@@ -248,8 +250,17 @@
 
       group.addEventListener('change', function (e) {
         const input = e.target;
-        if (!input.matches('input[type="radio"]') || reveal.contains(input)) return;
-        setOpen(input.checked && input.value === answer);
+        if (!input.matches('input[type="radio"], input[type="checkbox"]') || reveal.contains(input)) return;
+        // Open while the answer is picked (works for radios and checkboxes)
+        const picked = Array.prototype.some.call(group.querySelectorAll('input:checked'), function (i) {
+          return i.value === answer && !reveal.contains(i);
+        });
+        setOpen(picked);
+        // Typing field? Put the cursor in it
+        if (picked) {
+          const field = reveal.querySelector('input[type="text"], textarea');
+          if (field) setTimeout(function () { field.focus({ preventScroll: true }); }, 300);
+        }
       });
     });
   }
