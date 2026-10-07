@@ -324,3 +324,29 @@ html.dfs-shifting, html.dfs-shifting *, html.dfs-shifting *::before, html.dfs-sh
   .dfs-night-toggle { width: 3rem; }
   .dfs-night-toggle svg { width: 16px; height: 16px; }
 }
+
+/* ---------- Tweaks after the staging review (Rimbo, 7 Oct) ----------
+   Thomas: if you regenerate night.css, copy this block into night-extras.css. */
+
+/* Announcement bar: one colour at night, the timer included (was blue + two greys). */
+html.dfs-night .is-announce,
+html.dfs-night .announcement_text,
+html.dfs-night .countdown_component.is-announcement,
+html.dfs-night .countdown_component.is-announcement .countdown_unit,
+html.dfs-night .countdown_component.is-announcement .countdown_number,
+html.dfs-night .countdown_component.is-announcement .countdown_label { color: var(--brand-colors--dark_gray); }
+
+/* Money-back guarantee: by day the dashed shapes are beige on beige (barely there).
+   At night they'd turn moonlight and pop, so keep them a quiet blue-grey. */
+html.dfs-night .money-back_component svg { color: #34415f; }
+html.dfs-night .money-back_star { opacity: .35; }
+
+/* Arrow blocks that are dark by day turn moonlight at night: give the arrow the
+   night ink, so it isn't white on light ("Learn more"). */
+html.dfs-night .btn-icon-icon__bg.is-dark ~ .btn-icon-icon__wrap { color: #0e1628; }
+
+/* Instructor photo: the same moonlit blue as the chapter illustrations. */
+html.dfs-night .instructor_image { filter: brightness(.8) sepia(.3) hue-rotate(185deg) saturate(.9); }
+
+/* Phone: a narrower toggle, so the nav doesn't get squeezed. */
+@media screen and (max-width: 479px) { .dfs-night-toggle { width: 3rem; } }
