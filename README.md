@@ -29,7 +29,7 @@ See `RULES.md` for the house rules.
 2. GitHub tests it on the real site (live + staging, desktop + phone + iPhone):
    both Enroll buttons open a popup on screen, the email form goes to the right
    Stripe link, no JavaScript errors, styles applied. Nothing is published by the test.
-3. Green? Merge. GitHub tags a new version (or uses your own tag) and puts it on
+3. Green? Merge. GitHub tags the version from the commit message (or uses your own tag) and puts it on
    GitHub Pages within a few minutes. Once Webflow loads from Pages, no Webflow publish is needed.
 4. Red? Nothing goes live. Open the failed run to see screenshots.
 

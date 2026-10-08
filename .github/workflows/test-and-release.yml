@@ -73,9 +73,9 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Version tags: Rim also tags versions by hand (commit "v1.7.20: ...", then tag v1.7.20).
+      # Version tags: Rim tags versions by hand (commit "v1.7.20: ...", then tag v1.7.20).
       # Rules: never re-create or move an existing tag; if this commit has (or soon gets) a
-      # tag, use that one; otherwise continue from the highest existing tag.
+      # tag, use that one; only tag a version named in the commit message.
       - name: Pick the version number
         id: version
         run: |
@@ -100,15 +100,18 @@ jobs:
           fi
           latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n1)
           latest=${latest:-v0.0.0}
-          IFS=. read -r major minor patch <<< "${latest#v}"
-          next="v$major.$minor.$((patch + 1))"
-          # Use the number from the commit message when it is free and higher than the latest tag
+          # Tag only when the commit message names a free version higher than the latest tag.
+          # Otherwise no tag (so the workflow never takes a number Rim is about to use):
+          # the build is labelled "<latest tag>+<commit>".
           if [ -n "$wanted" ] && ! git rev-parse -q --verify "refs/tags/$wanted" >/dev/null \
              && [ "$(printf '%s\n%s\n' "$latest" "$wanted" | sort -V | tail -n1)" = "$wanted" ]; then
-            next="$wanted"
+            echo "New version $wanted (latest tag was $latest)"
+            echo "version=$wanted" >> "$GITHUB_OUTPUT"; echo "new=true" >> "$GITHUB_OUTPUT"
+          else
+            v="$latest+$(git rev-parse --short HEAD)"
+            echo "No version in the commit message: build $v, no tag"
+            echo "version=$v" >> "$GITHUB_OUTPUT"; echo "new=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "New version $next (latest tag was $latest)"
-          echo "version=$next" >> "$GITHUB_OUTPUT"; echo "new=true" >> "$GITHUB_OUTPUT"
 
       - name: Build
         run: npm run build
