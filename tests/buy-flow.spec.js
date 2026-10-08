@@ -1,8 +1,8 @@
 // Buy-flow test for digital-fengshui.com
 //
-// Loads the REAL site (live and/or staging). In build mode the request for
-// main.min.js is answered with our fresh dist/main.min.js, so the new code runs
-// on the real page without anything being published.
+// Loads the REAL site (live and/or staging). In build mode every request for one of
+// our files (main.min.js, styles.min.css, night/*) is answered from our fresh dist/,
+// so the new code runs on the real page without anything being published.
 //
 // Safety: this test never pays, never creates leads or abandoned-cart records and
 // never pollutes stats or the price test:
@@ -37,8 +37,8 @@ const TEST_EMAIL = 'test+ci@example.com';
 // Our site files, wherever they are loaded from (jsDelivr tag/branch, or GitHub Pages),
 // under the old (rimbodesigns) or the new (Digital-Feng-Shui) owner
 const REPO_FILE = '(cdn\\.jsdelivr\\.net\\/gh\\/(rimbodesigns|digital-feng-shui)\\/dfs-scripts@[^/]+|(rimbodesigns|digital-feng-shui)\\.github\\.io\\/dfs-scripts)\\/';
-const MAIN_SCRIPT = new RegExp(REPO_FILE + 'main(\\.min)?\\.js', 'i');
-const STYLES = new RegExp(REPO_FILE + 'styles(\\.min)?\\.css', 'i');
+const OUR_FILE = new RegExp(REPO_FILE + '([^?#]+)', 'i');
+const TYPES = { js: 'application/javascript; charset=utf-8', css: 'text/css; charset=utf-8', webp: 'image/webp' };
 const HOTFIX = /dfs_enroll_fix/;
 // Never let these through: tracking, stats, abandoned-cart, captcha
 const BLOCKED = [
@@ -66,11 +66,15 @@ const IGNORED_ERRORS = [
 ];
 
 const dist = (f) => fs.readFileSync(path.join(__dirname, '..', 'dist', f), 'utf8');
-const builtScript = BUILD_MODE ? dist('main.min.js') : null;
 const builtStyles = BUILD_MODE ? dist('styles.min.css') : null;
+// Our file from dist/, or null when the build doesn't have it
+function built(file) {
+  const f = path.join(__dirname, '..', 'dist', file);
+  return file.split('/').includes('..') || !fs.existsSync(f) ? null : fs.readFileSync(f);
+}
 
 async function prepare(page) {
-  const log = { served: 0, stylesServed: 0, hotfixBlocked: 0, stripe: [], stopped: [], errors: [] };
+  const log = { served: 0, stylesServed: 0, files: [], missing: [], hotfixBlocked: 0, stripe: [], stopped: [], errors: [] };
 
   page.on('pageerror', (err) => {
     const msg = String(err && err.message || err);
@@ -97,13 +101,16 @@ async function prepare(page) {
       log.stripe.push(url);
       return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>stripe stub</title><p>Stripe stub (test)</p>' });
     }
-    if (BUILD_MODE && MAIN_SCRIPT.test(url)) {
-      log.served++;
-      return route.fulfill({ status: 200, contentType: 'application/javascript; charset=utf-8', body: builtScript });
-    }
-    if (BUILD_MODE && STYLES.test(url)) {
-      log.stylesServed++;
-      return route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: builtStyles });
+    const ours = BUILD_MODE && url.match(OUR_FILE);
+    if (ours) {
+      const file = ours[ours.length - 1];
+      const body = built(file);
+      if (!body) { log.missing.push(file); return route.abort(); }
+      log.files.push(file);
+      if (file === 'main.min.js') log.served++;
+      if (file === 'styles.min.css') log.stylesServed++;
+      const ext = file.split('.').pop();
+      return route.fulfill({ status: 200, contentType: TYPES[ext] || 'application/octet-stream', body });
     }
     // Simulate "hotfix removed from Webflow": take its <script> tag out of the page HTML.
     if (BLOCK_HOTFIX && req.resourceType() === 'document' && req.isNavigationRequest() && req.frame() === page.mainFrame()) {
@@ -154,7 +161,7 @@ async function findOpenEmailField(page) {
       if (await inView(fields.nth(i))) { found = i; return true; }
     }
     return false;
-  }, { message: 'an email field of the Enroll popup should be on screen', timeout: 10_000 }).toBe(true);
+  }, { message: 'an email field of the Enroll popup should be on screen', timeout: 20_000 }).toBe(true);
   return fields.nth(found);
 }
 
@@ -185,6 +192,7 @@ for (const site of sites) {
         await page.waitForTimeout(1500); // let page scripts and animations settle
 
         if (BUILD_MODE) expect(log.served, 'the new main.min.js should have replaced the site script').toBeGreaterThan(0);
+        if (BUILD_MODE) expect(log.missing, 'every file the site loads from this repo should be in the build').toEqual([]);
         if (BLOCK_HOTFIX) expect(log.hotfixBlocked, 'the hotfix should have been blocked').toBeGreaterThan(0);
 
         // Stylesheet: loaded and applied. In build mode, a site that doesn't link styles.min.css
@@ -260,6 +268,7 @@ for (const site of sites) {
         // 5. No JavaScript errors on the page
         expect(log.errors, 'no JavaScript errors').toEqual([]);
 
+        if (BUILD_MODE) test.info().annotations.push({ type: 'served from build', description: [...new Set(log.files)].join(', ') });
         test.info().annotations.push({ type: 'stopped requests', description: log.stopped.join(' | ') || 'none' });
       });
     }

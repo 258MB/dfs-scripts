@@ -1,9 +1,9 @@
 /* =========================================================
    Digital Feng Shui — site JavaScript
    Loaded once, site-wide, from Site settings → Footer:
-   <script src="https://digital-feng-shui.github.io/dfs-scripts/main.min.js"></script>
-   (no defer — see "Run" at the bottom for timing; the GitHub workflow builds
-   main.min.js from this file and puts it live only after the tests pass)
+   <script src="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/main.min.js"></script>
+   (no defer — see "Run" at the bottom for timing; jsDelivr builds
+   main.min.js from this file automatically)
 
    Each section below is one former Slater script, wrapped in its own
    function so names can't clash. The router at the bottom decides
@@ -77,6 +77,8 @@
     gsap.set(o.capBottom, { scaleY: 1 });
     if (o.content) gsap.set(o.content, { autoAlpha: 0, y: 20 });
     o.overlay.style.display = 'block';
+    // Let the wheel/touch scroll the overlay itself (Lenis would otherwise take it)
+    o.overlay.setAttribute('data-lenis-prevent', '');
     if (o.lockScroll) document.body.style.overflow = 'hidden';
 
     const tl = gsap.timeline()
@@ -87,6 +89,258 @@
         OVERLAY_DURATION * 0.75);
     }
     return tl;
+  }
+
+  // =========================================================
+  // CHOICE FIELDS — form pieces built in the Designer, wired up by attributes
+  //
+  // 1. Collapsible "pick one" field
+  //   [data-choice]                 the field group
+  //     [data-choice-toggle]        looks like an input; click to open/close
+  //       [data-choice-value]       shows "Choose one", then the picked option
+  //       [data-choice-arrow]       flips when open
+  //     [data-choice-panel]         slides open; holds normal Osmo radio buttons
+  //
+  // 2. Panel that opens for one answer
+  //   [data-choice-reveal="Plan"]   opens while the radio/checkbox with value
+  //                                 "Plan" (in the same field group) is picked.
+  //                                 Also for "Something else" + a text field.
+  //
+  // 3. Day picker
+  //   [data-choice-dates="next-week"] on a radio group with ONE radio button in
+  //                                 it: it becomes Mon–Sun of next week
+  //                                 (value = the date, e.g. 2026-10-12).
+  //                                 Text goes into .choice_day-name / .choice_day-number
+  //
+  // 4. Type-your-own answer
+  //   input[data-choice-other]      a text field inside a radio group, as one more
+  //                                 option: clicking into it switches the buttons off,
+  //                                 picking a button dims it. Only the active one is
+  //                                 sent; the text as "<group name>-other".
+  //
+  // Required? Put data-validate on the field group (Osmo form validation).
+  // =========================================================
+
+  // Lenis caches the page height, so tell it when something grows or shrinks
+  function relayoutScroll() {
+    if (window.lenis && typeof window.lenis.resize === 'function') window.lenis.resize();
+  }
+
+  // Webflow's API can only set data-name on radios; the browser groups radios
+  // by name. Copy data-name over so one answer per question can be picked.
+  function syncRadioNames(root) {
+    root.querySelectorAll('input[type="radio"][data-name]').forEach(function (input) {
+      if (input.name !== input.dataset.name) input.name = input.dataset.name;
+    });
+    // Webflow's Form Label outputs for="", which points at nothing and stops a
+    // click on the label from picking the option inside it
+    root.querySelectorAll('label[for=""]').forEach(function (label) {
+      label.removeAttribute('for');
+    });
+  }
+
+  function dfsChoiceDates() {
+    const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad = (n) => (n < 10 ? '0' : '') + n;
+
+    document.querySelectorAll('[data-choice-dates="next-week"]').forEach(function (group) {
+      const firstInput = group.querySelector('input[type="radio"]');
+      const template = firstInput && firstInput.closest('label');
+      if (!template || group.__datesReady) return;
+      group.__datesReady = true;
+
+      // Monday of next week (also when today is a Monday)
+      const monday = new Date();
+      monday.setHours(0, 0, 0, 0);
+      monday.setDate(monday.getDate() + (((8 - monday.getDay()) % 7) || 7));
+
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(monday);
+        day.setDate(monday.getDate() + i);
+        const iso = day.getFullYear() + '-' + pad(day.getMonth() + 1) + '-' + pad(day.getDate());
+
+        const tile = template.cloneNode(true);
+        const input = tile.querySelector('input[type="radio"]');
+        input.value = iso;
+        input.id = (input.dataset.name || 'day') + '-' + iso;
+        input.checked = false;
+        tile.dataset.choiceLabel = DAY[day.getDay()] + ' ' + day.getDate() + ' ' + MONTH[day.getMonth()];
+
+        // Day name + number go into the template's own elements (styled in the Designer)
+        const label = tile.querySelector('.radiocheck-label, span') || tile;
+        const nameEl = tile.querySelector('.choice_day-name');
+        const numberEl = tile.querySelector('.choice_day-number');
+        if (nameEl && numberEl) {
+          nameEl.textContent = DAY[day.getDay()];
+          numberEl.textContent = day.getDate();
+        } else {
+          label.textContent = DAY[day.getDay()] + ' ' + day.getDate();
+        }
+        label.setAttribute('for', input.id);
+
+        template.parentNode.insertBefore(tile, template);
+      }
+      template.remove();
+    });
+  }
+
+  function dfsChoiceFields() {
+    // 1. Collapsible "pick one" fields
+    document.querySelectorAll('[data-choice]').forEach(function (field) {
+      const toggle = field.querySelector('[data-choice-toggle]');
+      const panel = field.querySelector('[data-choice-panel]');
+      const value = field.querySelector('[data-choice-value]');
+      if (!toggle || !panel || field.__choiceReady) return;
+      field.__choiceReady = true;
+
+      const placeholder = value ? value.textContent : '';
+      let open = false;
+
+      function setOpen(next) {
+        if (next === open) return;
+        open = next;
+        field.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        gsap.to(panel, {
+          height: open ? 'auto' : 0,
+          duration: open ? 0.45 : 0.35,
+          ease: open ? 'power2.out' : 'power2.inOut',
+          onComplete: relayoutScroll
+        });
+      }
+
+      toggle.addEventListener('click', function () { setOpen(!open); });
+      toggle.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); }
+        if (e.key === 'Escape') setOpen(false);
+      });
+
+      // Picking an option: show it in the field, then close
+      panel.addEventListener('change', function (e) {
+        const input = e.target;
+        if (!input.matches('input[type="radio"]') || !input.checked) return;
+        const label = input.closest('label');
+        const text = label ? (label.dataset.choiceLabel || label.textContent.trim()) : input.value;
+        if (value) value.textContent = text || placeholder;
+        field.classList.add('is-filled');
+        setTimeout(function () { setOpen(false); }, 200);
+      });
+
+      // Focus landing on an option (keyboard, or the form pointing at a missing
+      // answer) opens the panel, so the option is visible
+      panel.addEventListener('focusin', function () { setOpen(true); });
+
+      // Clicking anywhere else closes it
+      document.addEventListener('click', function (e) {
+        if (open && !field.contains(e.target)) setOpen(false);
+      });
+    });
+
+    // 2. Panels that open for one answer (e.g. "Plan" → pick a day)
+    document.querySelectorAll('[data-choice-reveal]').forEach(function (reveal) {
+      if (reveal.__revealReady) return;
+      reveal.__revealReady = true;
+
+      const answer = reveal.getAttribute('data-choice-reveal');
+      const group = reveal.closest('[data-validate]') || reveal.parentElement;
+      let open = false;
+
+      function setOpen(next) {
+        if (next === open) return;
+        open = next;
+        reveal.classList.toggle('is-open', open);
+        if (open) {
+          reveal.style.display = 'block';
+          gsap.fromTo(reveal, { height: 0 }, {
+            height: 'auto', duration: 0.5, ease: 'power2.out', onComplete: relayoutScroll
+          });
+        } else {
+          // Leaving this answer: forget what was picked or typed inside the panel
+          reveal.querySelectorAll('input:checked').forEach(function (i) { i.checked = false; });
+          reveal.querySelectorAll('input[type="text"], input:not([type]), textarea').forEach(function (i) { i.value = ''; });
+          gsap.to(reveal, {
+            height: 0, duration: 0.35, ease: 'power2.inOut',
+            onComplete: function () {
+              reveal.style.display = 'none';
+              // Clear red/green states once hidden, so reopening starts fresh
+              reveal.querySelectorAll('[data-validate]').forEach(function (g) {
+                g.classList.remove('is--error', 'is--success', 'is--filled');
+              });
+              relayoutScroll();
+            }
+          });
+        }
+      }
+
+      group.addEventListener('change', function (e) {
+        const input = e.target;
+        if (!input.matches('input[type="radio"], input[type="checkbox"]') || reveal.contains(input)) return;
+        // Open while the answer is picked (works for radios and checkboxes)
+        const picked = Array.prototype.some.call(group.querySelectorAll('input:checked'), function (i) {
+          return i.value === answer && !reveal.contains(i);
+        });
+        setOpen(picked);
+        // Typing field? Put the cursor in it
+        if (picked) {
+          const field = reveal.querySelector('input[type="text"], textarea');
+          if (field) setTimeout(function () { field.focus({ preventScroll: true }); }, 300);
+        }
+      });
+    });
+
+    // 4. Type-your-own answer, one answer at a time: clicking into the field (or typing)
+    //    switches the buttons off; picking a button switches the field off. Its text stays,
+    //    dimmed (.is-inactive), and isn't sent. The active field is .is-picked and its
+    //    text is sent as "<group name>-other" (e.g. problems-other).
+    document.querySelectorAll('input[data-choice-other]').forEach(function (field) {
+      const group = field.closest('[data-radiocheck-group]');
+      const option = group && group.querySelector('input[type="radio"]');
+      if (!option || field.__otherReady) return;
+      field.__otherReady = true;
+      const name = option.name + '-other';
+      field.removeAttribute('name'); // only sent while it's the answer
+
+      // A hidden, unnamed radio tells the form validation "answered" when the text is the answer
+      const answered = document.createElement('input');
+      answered.type = 'radio';
+      answered.hidden = true;
+      answered.tabIndex = -1;
+      field.insertAdjacentElement('afterend', answered);
+
+      let active = false;
+
+      function update() {
+        const hasText = field.value.trim() !== '';
+        field.classList.toggle('is-picked', active);
+        field.classList.toggle('is-inactive', !active && hasText);
+        if (active) field.name = name; else field.removeAttribute('name');
+        const isAnswer = active && hasText;
+        if (answered.checked !== isAnswer) {
+          answered.checked = isAnswer;
+          answered.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+
+      function activate() {
+        if (!active) {
+          active = true;
+          // Quietly, so the question doesn't flash red before anything is typed
+          group.querySelectorAll('input[type="radio"]:checked:not([hidden])').forEach(function (r) {
+            r.checked = false;
+          });
+        }
+        update();
+      }
+
+      field.addEventListener('click', activate);
+      field.addEventListener('input', activate);
+      group.addEventListener('change', function (e) {
+        if (e.target === answered || !e.target.checked) return;
+        active = false; // a button was picked
+        update();
+      });
+    });
   }
 
   // =========================================================
@@ -716,21 +970,78 @@
       btnT1.classList.add("is-active");
       currentTState = 1;
 
-      // --- één generieke state-switcher i.p.v. 3x dezelfde functie ---
-      function goToState(n) {
-        if (currentTState === n) return;
-        slides.forEach((slide, i) => {
-          const active = i === n - 1;
-          gsap.to(slide, {
-            autoAlpha: active ? 1 : 0,
-            duration: 0.5,
-            pointerEvents: active ? "auto" : "none"
-          });
+      // --- line reveal: oude regels schuiven omhoog weg, nieuwe komen van onder ---
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const imgHidden = 'inset(50% 50% 50% 50%)';
+      const imgVisible = 'inset(0% 0% 0% 0%)';
+      let isAnimating = false;
+
+      const parts = slides.map((slide, i) => {
+        const part = { lines: [], image: slide.querySelector('.testimonial_profile-image') };
+        if (reduceMotion || typeof SplitText === 'undefined') return part;
+        const targets = slide.querySelectorAll('.testimonial_quote, .testimonial_name');
+        const splits = [];
+        targets.forEach((el) => {
+          // SplitText can't find lines in a flex/grid box: split an inner block instead
+          if (/flex|grid/.test(getComputedStyle(el).display)) {
+            const inner = document.createElement('div');
+            inner.style.width = '100%';
+            while (el.firstChild) inner.appendChild(el.firstChild);
+            el.appendChild(inner);
+            el = inner;
+          }
+          splits.push(SplitText.create(el, {
+          type: 'lines',
+          mask: 'lines',
+          linesClass: 'text-line',
+          autoSplit: true,
+          onSplit(self) {
+            // autoSplit re-splits on resize/font load: gather fresh lines each time
+            part.lines = splits.concat(self).filter((sp, k, a) => sp && a.indexOf(sp) === k).flatMap((sp) => sp.lines);
+            const active = i === currentTState - 1;
+            if (!isAnimating) gsap.set(self.lines, { yPercent: active ? 0 : 110 });
+          }
+        }));
         });
+        part.lines = splits.flatMap((sp) => sp.lines);
+        if (part.image) gsap.set(part.image, { clipPath: i === 0 ? imgVisible : imgHidden });
+        return part;
+      });
+
+      function goToState(n) {
+        if (currentTState === n || isAnimating) return;
+        const from = currentTState - 1;
+        const to = n - 1;
+        const out = slides[from];
+        const inc = slides[to];
+        isAnimating = true;
+
         section.querySelectorAll(".t-btn").forEach((b) => b.classList.remove("is-active"));
-        btns[n - 1].classList.add("is-active");
+        btns[to].classList.add("is-active");
         currentTState = n;
         resetProgress();
+
+        const done = () => {
+          gsap.set(out, { autoAlpha: 0, pointerEvents: "none" });
+          gsap.set(inc, { pointerEvents: "auto" });
+          isAnimating = false;
+        };
+
+        if (reduceMotion || !parts[to].lines.length) {
+          gsap.to(out, { autoAlpha: 0, duration: 0.4, ease: "power2" });
+          gsap.fromTo(inc, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: "power2", onComplete: done });
+          return;
+        }
+
+        gsap.set(inc, { autoAlpha: 1 });
+        gsap.set(parts[to].lines, { yPercent: 110 });
+
+        const tl = gsap.timeline({ onComplete: done });
+        tl.to(parts[from].lines, { yPercent: -110, duration: 0.6, ease: "power4.inOut", stagger: { amount: 0.25 } }, 0);
+        // fromTo with both values spelled out: the browser shortens inset(50% 50% 50% 50%) to inset(50%), which GSAP can't tween from
+        if (parts[from].image) tl.fromTo(parts[from].image, { clipPath: imgVisible }, { clipPath: imgHidden, duration: 0.6, ease: "power4.inOut" }, 0);
+        tl.to(parts[to].lines, { yPercent: 0, duration: 0.7, ease: "power4.inOut", stagger: { amount: 0.4 } }, ">-=0.3");
+        if (parts[to].image) tl.fromTo(parts[to].image, { clipPath: imgHidden }, { clipPath: imgVisible, duration: 0.75, ease: "power4.inOut", immediateRender: true }, "<");
       }
 
       wrapT1.addEventListener("click", () => goToState(1));
@@ -831,12 +1142,20 @@
       const marquees = qa('[data-css-marquee]');
       if (!marquees.length) return;
 
-      // Duplicate each list inside its container
+      // Copy the list until it fills the widest screen the marquee may stretch to
+      // (one copy was too short on very wide screens, so its end came into view)
       marquees.forEach(marquee => {
-        marquee.querySelectorAll('[data-css-marquee-list]').forEach(list => {
-          const duplicate = list.cloneNode(true);
-          marquee.appendChild(duplicate);
-        });
+        const originals = [...marquee.querySelectorAll('[data-css-marquee-list]')];
+        const listWidth = originals.reduce((w, list) => w + list.offsetWidth, 0);
+        const wide = Math.max(marquee.offsetWidth, window.screen ? screen.width : 0);
+        const copies = listWidth ? Math.max(1, Math.ceil(wide / listWidth)) : 1;
+        for (let i = 0; i < copies; i++) {
+          originals.forEach(list => {
+            const duplicate = list.cloneNode(true);
+            duplicate.setAttribute('aria-hidden', 'true');
+            marquee.appendChild(duplicate);
+          });
+        }
       });
 
       // Pause/run based on whether the marquee is in view
@@ -2627,23 +2946,28 @@
           .to(capBottom, { scaleY: 0.35, duration: DURATION, ease: "none" }, 0.4);
       }
 
+      // Every visible question answered (the form validation marks what's missing)
       function isFormValid() {
+        if (formEl.__dfsValidate) return formEl.__dfsValidate();
         const name = formEl.querySelector('[name="name"]')?.value.trim() || "";
-        const problems = formEl.querySelectorAll('[name="problems"]:checked').length;
-        const planning = formEl.querySelectorAll('[name="planning"]:checked').length;
-        const nudge = formEl.querySelectorAll('[name="Nudge"]:checked').length;
-        return name.length >= 2 && problems >= 1 && planning >= 1 && nudge >= 1;
+        const picked = (n) => formEl.querySelectorAll(`[name="${n}"]:checked`).length > 0;
+        return name.length >= 2 && picked("problems") && picked("planning") && picked("Nudge");
       }
 
       function readAnswers() {
+        // Button answers send their label; the type-your-own answer sends what was typed
         const problems = [...formEl.querySelectorAll('[name="problems"]:checked')]
           .map(i => i.closest(".radiocheck-field")?.textContent.trim() || i.value);
         const getChecked = (n) => [...formEl.querySelectorAll(`[name="${n}"]:checked`)].map(i => i
           .value);
+        const planning = getChecked("planning")[0] || "";
         return {
           firstName: formEl.querySelector('[name="name"]')?.value.trim() || "",
+          work: getChecked("work")[0] || "",
           problems: problems.join(", "),
-          planning: getChecked("planning")[0] || "",
+          problemsOther: formEl.querySelector('[name="problems-other"]')?.value.trim() || "",
+          planning: planning,
+          startDay: planning === "Plan" ? (getChecked("start-day")[0] || "") : "",
           nudge: getChecked("Nudge")[0] || "",
         };
       }
@@ -2661,6 +2985,16 @@
 
         const member = res?.data || {};
 
+        // New fields go separately: if they're not set up in Memberstack yet,
+        // the answers above (and "onboarded") are still saved
+        try {
+          await window.$memberstackDom.updateMember({
+            customFields: { "work": data.work, "start-day": data.startDay, "problems-other": data.problemsOther }
+          });
+        } catch (err) {
+          console.warn("onboarding: work/start-day not saved in Memberstack", err);
+        }
+
         document.querySelectorAll('[data-ms-content="first-name"], [data-ms-member="first-name"]')
           .forEach(el => { el.textContent = data.firstName; });
 
@@ -2672,8 +3006,11 @@
               memberId: member.id || "",
               email: member.auth?.email || "",
               firstName: data.firstName,
+              work: data.work,
               problems: data.problems,
+              problemsOther: data.problemsOther,
               planning: data.planning,
+              startDay: data.startDay,
               nudge: data.nudge
             })
           });
@@ -2781,30 +3118,42 @@
       const arrowBox = card.querySelector('[cc_arwbox]');
       const arrowIcon = card.querySelector('.cr_arrow');
       if (!arrowBox) return;
+      // Courses that aren't open yet don't light up on hover
+      if (arrowBox.classList.contains('is-inactive') || card.querySelector('.coming_soon')) return;
 
-      // Create the Timeline
-      const tl = gsap.timeline({ paused: true });
+      // Colours come from the brand variables at hover time, so they follow day/night
+      // mode; after hover the inline colours are cleared again (otherwise a colour from
+      // the other mode could stick to the box).
+      const brand = (name, fallback) =>
+        getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+      const tl = gsap.timeline({
+        paused: true,
+        onReverseComplete: () => gsap.set([arrowBox, arrowIcon].filter(Boolean),
+          { clearProps: 'backgroundColor,color' })
+      });
 
-      // 1. Animate the Box: Background and Border
-      tl.to(arrowBox, {
-        backgroundColor: "#EDF5F9",
-        duration: 0.4,
-        ease: "power2.out"
-      }, 0);
-
-      // 2. Animate the Arrow: Color and Juggle
-      if (arrowIcon) {
-        tl.to(arrowIcon, {
-          color: "#0297DB",
-          rotation: -45,
-          transformOrigin: "50% 50%",
+      function build() {
+        tl.clear();
+        // 1. Animate the Box: Background
+        tl.to(arrowBox, {
+          backgroundColor: brand('--brand-colors--light-bleu', '#EDF5F9'),
           duration: 0.4,
-          ease: "back.out(2)",
+          ease: "power2.out"
         }, 0);
+        // 2. Animate the Arrow: Color and Juggle
+        if (arrowIcon) {
+          tl.to(arrowIcon, {
+            color: brand('--brand-colors--blue', '#0297DB'),
+            rotation: -45,
+            transformOrigin: "50% 50%",
+            duration: 0.4,
+            ease: "back.out(2)",
+          }, 0);
+        }
       }
 
       // Hover Functions
-      const playAnim = () => tl.play();
+      const playAnim = () => { if (tl.progress() === 0) build(); tl.play(); };
       const reverseAnim = () => tl.reverse();
 
       // Listeners
@@ -3470,7 +3819,8 @@
             if (f.type === 'checkbox' || f.type === 'radio') {
               if (!f.checked) return;
               var label = f.closest('.radiocheck-field');
-              var val = label ? label.textContent.trim() : f.value;
+              // Day picker: send the date itself (2026-10-12), not "Mon 12"
+              var val = label && !f.closest('[data-choice-dates]') ? label.textContent.trim() : f.value;
               data[f.name] = data[f.name] ? data[f.name] + ', ' + val : val;
               return;
             }
@@ -3598,11 +3948,20 @@
           }
         });
 
+        // Skip fields that are hidden (e.g. the day picker while "Right now" is picked)
+        function isHidden(el) {
+          return !el.offsetParent && getComputedStyle(el).position !== 'fixed';
+        }
+
         function validateAndStartLiveValidationForAll() {
           let allValid = true;
           let firstInvalidField = null;
 
           validateFields.forEach(function (fieldGroup) {
+            if (isHidden(fieldGroup)) {
+              fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+              return;
+            }
             const input = fieldGroup.querySelector('input, textarea, select');
             const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
             if (!input && !radioCheckGroup) return;
@@ -3691,6 +4050,10 @@
         }
 
         function updateFieldStatus(fieldGroup) {
+          if (isHidden(fieldGroup)) {
+            fieldGroup.classList.remove('is--error', 'is--success', 'is--filled');
+            return;
+          }
           const radioCheckGroup = fieldGroup.querySelector('[data-radiocheck-group]');
 
           if (radioCheckGroup) {
@@ -3824,6 +4187,9 @@
           }
         });
 
+        // Exposed so page scripts (course onboarding) can check the whole form
+        form.__dfsValidate = validateAndStartLiveValidationForAll;
+
         if (dataSubmit) {
           dataSubmit.addEventListener('click', function (e) {
             e.preventDefault();
@@ -3906,11 +4272,39 @@
   }
 
   // =========================================================
+  // ONE-SHOT RACE BARS — /one-shot-setup hero
+  // The blue "one-shot" bar snaps full, the grey "by hand" bar crawls after it.
+  // Finds the bars by their Webflow classes: .oneshot-race > .oneshot-race_bar
+  // (.is-macro = the fast one). Rename those classes and this stops running.
+  // =========================================================
+  function dfsRaceBars() {
+    if (typeof gsap === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    document.querySelectorAll('.oneshot-race').forEach(function (race) {
+      var fast = race.querySelectorAll('.oneshot-race_bar.is-macro');
+      var slow = race.querySelectorAll('.oneshot-race_bar:not(.is-macro)');
+
+      gsap.timeline({
+        delay: 0.3,
+        scrollTrigger: { trigger: race, start: 'top 90%' }
+      })
+        .from(fast, { width: 0, duration: 0.35, ease: 'power4.out' })
+        .from(slow, { width: 0, duration: 2.6, ease: 'power1.inOut' }, '<');
+    });
+  }
+
+  // =========================================================
   // Run
   // Page sections run straight away, like the old Slater page scripts did.
   // Global + Home wait for the whole page, like their old "defer" tags.
   // =========================================================
   var path = location.pathname.replace(/\/+$/, '') || '/';
+
+  // Form pieces first, so the form validation below sees the final radio buttons
+  syncRadioNames(document);
+  dfsChoiceDates();
+  dfsChoiceFields();
 
   var AUTH_PAGES = ['/login', '/sign-up', '/create-account', '/create-account-2',
     '/forgot-password', '/reset-password'];
@@ -3938,6 +4332,7 @@
 
   onPageReady(function () {
     dfsGlobal();
+    if (document.querySelector('.oneshot-race')) dfsRaceBars();
     if (path === '/' || path === '/course' || path === '/test-zone') dfsHome();
   });
 

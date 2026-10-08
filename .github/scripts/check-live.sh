@@ -9,7 +9,8 @@ for i in $(seq 1 30); do
   if [ "$got" = "$want" ]; then
     curl -fsS -o /dev/null "$base/main.min.js"
     curl -fsS -o /dev/null "$base/styles.min.css"
-    echo "Live: $want at $base/main.min.js and $base/styles.min.css"
+    for f in night-early.min.js night.min.js night.min.css; do curl -fsS -o /dev/null "$base/night/$f"; done
+    echo "Live: $want at $base/ (main.min.js, styles.min.css, night/*)"
     exit 0
   fi
   echo "Waiting for $want (now: ${got:-nothing})"

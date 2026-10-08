@@ -6,9 +6,10 @@ Short and simple, so the site keeps selling while we change things.
 1. Code only changes through this repo, with a pull request. Never paste or edit code
    directly in Webflow custom code (site settings, page settings or embeds).
 2. A pull request is merged only when the tests are green.
-3. Green on main goes live by itself. Red never goes live.
+3. Green on main goes to GitHub Pages by itself. Red never does.
 4. Something wrong on the live site? Run **Actions > Rollback** first, fix after.
-5. Don't push version tags by hand; the workflow makes them.
+5. Version tags: the workflow makes them. Tagging by hand is fine too (commit "v1.2.3: ...",
+   tag v1.2.3): the workflow then uses your tag and never re-creates or moves a tag.
 
 ## Webflow design changes
 1. Publish to staging (dfs-staging.webflow.io) first and check it, on a phone too.

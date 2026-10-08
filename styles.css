@@ -1,8 +1,8 @@
 /* =========================================================
    Digital Feng Shui — site CSS
    Loaded once, site-wide, from Site settings → Head:
-   <link rel="stylesheet" href="https://digital-feng-shui.github.io/dfs-scripts/styles.min.css">
-   The GitHub workflow builds styles.min.css and puts it live after the tests pass.
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rimbodesigns/dfs-scripts@vX.Y.Z/styles.min.css">
+   jsDelivr builds styles.min.css from this file automatically.
 
    Webflow's own Designer styles stay in Webflow. This file holds the
    hand-written CSS that used to live in code embeds.
@@ -480,4 +480,77 @@ input:-webkit-autofill:focus {
 [data-dfs-blocks] .dfs-blk-cell{
   position: absolute;
   border-radius: var(--blk-radius);
+}
+
+/* =========================================================
+   CHOICE FIELDS — collapsible "pick one" field (see dfsChoiceFields in main.js)
+   Closed until clicked. Without JavaScript (and in the Designer) the panel
+   simply stays open, so the options are always reachable.
+   ========================================================= */
+
+.w-mod-js [data-choice-panel] {
+  height: 0;
+  overflow: hidden;
+}
+
+[data-choice-arrow] {
+  transition: transform 0.3s ease;
+}
+
+[data-choice].is-open [data-choice-arrow] {
+  transform: rotate(180deg);
+}
+
+[data-choice].is-filled [data-choice-value] {
+  opacity: 1;
+}
+
+/* Required but nothing picked: red border like the other fields */
+[data-validate].is--error [data-choice-toggle] {
+  border-color: #FF4C24;
+}
+
+/* Panel that opens for one answer ("Plan"): closed until that answer is picked */
+.w-mod-js [data-choice-reveal] {
+  display: none;
+  overflow: hidden;
+}
+
+/* =========================================================
+   ONBOARDING OVERLAY — a form taller than the screen scrolls inside the overlay
+   (the feedback overlay, .is-feedback, already scrolls and is left alone)
+   ========================================================= */
+.onboarding-overlay:not(.is-feedback) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.onboarding-overlay:not(.is-feedback) .transition-panel {
+  position: fixed; /* the background stays put while the form scrolls over it */
+}
+
+.onboarding-overlay:not(.is-feedback) .onboarding-form {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+/* =========================================================
+   DASHBOARD — courses that aren't open yet (a "Coming soon" on the card, or the
+   combo class is-inactive on the corner): grey corner arrow, cover not clickable
+   ========================================================= */
+.course_card:has(.coming_soon) .click_indicator_cr,
+.click_indicator_cr.is-inactive {
+  background-color: var(--brand-colors--bage);
+  border-color: var(--brand-colors--dark-bage);
+}
+
+.course_card:has(.coming_soon) .click_indicator_cr .cr_arrow,
+.click_indicator_cr.is-inactive .cr_arrow {
+  color: var(--brand-colors--ll-gray);
+}
+
+.course_card:has(.coming_soon) .cover_course-card {
+  cursor: default;
+  pointer-events: none;
 }

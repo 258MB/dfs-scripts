@@ -1,11 +1,12 @@
-// Builds dist/ from main.js and styles.css:
+// Builds dist/ with every file the website loads from this repo:
 //   dist/main.min.js     the script the website loads
 //   dist/styles.min.css  the stylesheet the website loads
-//   dist/main.js, dist/styles.css  readable copies (handy for debugging)
+//   dist/night/night-early.min.js, night.min.js, night.min.css, *.webp   night mode
+//   dist/main.js, dist/styles.css, dist/night/*.js|css  readable copies (handy for debugging)
 //   dist/version.json which version is in this build
 // Usage: node scripts/build.mjs            (version from the latest git tag + "-dev")
 //        DFS_VERSION=v1.2.0 node scripts/build.mjs
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, copyFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 import { minify } from 'terser';
 import CleanCSS from 'clean-css';
@@ -18,25 +19,39 @@ function git(cmd) {
 const version = process.env.DFS_VERSION || ((git('describe --tags --abbrev=0') || 'v0.0.0') + '-dev');
 const commit = git('rev-parse --short HEAD') || 'unknown';
 
-const source = await readFile('main.js', 'utf8');
-const result = await minify(source, {
-  compress: true,
-  mangle: true,
-  format: { comments: false, preamble: `/* dfs-scripts ${version} (${commit}) */` }
-});
-if (!result.code) throw new Error('Minify produced no output');
+const banner = `/* dfs-scripts ${version} (${commit}) */`;
+const sizes = [];
 
-await mkdir('dist', { recursive: true });
-await writeFile('dist/main.min.js', result.code + '\n');
-await writeFile('dist/main.js', source);
-const css = await readFile('styles.css', 'utf8');
-const cssResult = new CleanCSS({ level: 1 }).minify(css);
-if (cssResult.errors.length) throw new Error('CSS errors: ' + cssResult.errors.join('; '));
-await writeFile('dist/styles.min.css', `/* dfs-scripts ${version} (${commit}) */\n` + cssResult.styles + '\n');
-await writeFile('dist/styles.css', css);
+async function buildJs(src, out) {
+  const code = await readFile(src, 'utf8');
+  const result = await minify(code, { compress: true, mangle: true, format: { comments: false, preamble: banner } });
+  if (!result.code) throw new Error('Minify produced no output for ' + src);
+  await writeFile('dist/' + out, result.code + '\n');
+  await writeFile('dist/' + src, code);
+  sizes.push(`${out} ${result.code.length}`);
+}
+
+async function buildCss(src, out) {
+  const css = await readFile(src, 'utf8');
+  const result = new CleanCSS({ level: 1 }).minify(css);
+  if (result.errors.length) throw new Error('CSS errors in ' + src + ': ' + result.errors.join('; '));
+  await writeFile('dist/' + out, banner + '\n' + result.styles + '\n');
+  await writeFile('dist/' + src, css);
+  sizes.push(`${out} ${result.styles.length}`);
+}
+
+await mkdir('dist/night', { recursive: true });
+await buildJs('main.js', 'main.min.js');
+await buildCss('styles.css', 'styles.min.css');
+await buildJs('night/night-early.js', 'night/night-early.min.js');
+await buildJs('night/night.js', 'night/night.min.js');
+await buildCss('night/night.css', 'night/night.min.css');
+for (const f of await readdir('night')) {
+  if (f.endsWith('.webp')) await copyFile('night/' + f, 'dist/night/' + f);
+}
 
 await writeFile('dist/version.json', JSON.stringify({
   version, commit, built: new Date().toISOString()
 }, null, 2) + '\n');
 
-console.log(`Built ${version} (${commit}): main.min.js ${result.code.length} bytes, styles.min.css ${cssResult.styles.length} bytes`);
+console.log(`Built ${version} (${commit}): ${sizes.join(', ')} bytes`);

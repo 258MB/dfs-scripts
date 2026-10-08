@@ -1,0 +1,228 @@
+/* Hand-tuned night details. Appended to night.css by gen_css.py. */
+
+/* Light text on a dark ground looks heavier than dark on light. Thin it back
+   so RM Mono and Mondwest keep their light, calm feel at night. */
+html.dfs-night { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html.dfs-night body { background-color: #0e1628; }
+html.dfs-night ::selection { background: #1a97d7; color: #0e1628; }
+
+/* Mountains: night versions of the same images (recoloured, no AI).
+   IMAGE LINKS: after uploading the two images to Webflow, put their CDN URLs
+   here (and in NIGHT_HERO at the top of night.js). Nothing else to change. */
+html.dfs-night {
+  --dfs-night-hero: url(HERO_BG_4-night.webp);
+  --dfs-night-overview: url(BG_v5-night.webp);
+}
+html.dfs-night .outcome_row.is-mac,
+html.dfs-night .cta_bg { background-image: var(--dfs-night-hero); }
+
+/* Inline SVG icons with a fixed brand colour (logo, chapter icons) follow the palette. */
+html.dfs-night svg [fill="#3D3A35" i] { fill: var(--brand-colors--dark_gray); }
+html.dfs-night svg [fill="#F1EDE2" i] { fill: var(--brand-colors--bage); }
+html.dfs-night svg [stroke="#DFD5C9" i] { stroke: var(--brand-colors--dark-bage); }
+html.dfs-night svg [stroke="#F1EDE2" i] { stroke: var(--brand-colors--bage); }
+
+/* Tool logos in the tech-stack orbit are app icons on a white disc: they keep their own
+   day colours (Notion and Arc are drawn in the site's dark grey, which the rule above
+   would turn light on white), and the whole badge is dimmed a touch, like the photos. */
+html.dfs-night .tech-stack_icon svg [fill="#3D3A35" i] { fill: #3d3a35; }
+html.dfs-night .tech-stack_icon svg [fill="#F1EDE2" i] { fill: #f1ede2; }
+html.dfs-night .tech-stack_icon svg [stroke="#DFD5C9" i] { stroke: #dfd5c9; }
+html.dfs-night .tech-stack_icon svg [stroke="#F1EDE2" i] { stroke: #f1ede2; }
+html.dfs-night .tech-stack_icon { filter: brightness(.88); }
+
+/* Nav boxes (Login, My courses): solid by day; at night they take the same
+   see-through glass as the nav bar, so they don't read as dark holes. */
+html.dfs-night .btn-animate-chars__bg.is-sign-in { background-color: rgba(23, 33, 56, .35); }
+html.dfs-night .btn-animate-chars__bg.is-sign-in:hover { background-color: var(--brand-colors--light-bleu); }
+
+/* Blue Enroll buttons keep light text (like by day), not navy. */
+html.dfs-night .btn-icon-content.is-big .btn-icon-content__text,
+html.dfs-night .btn-icon-content.is-medium .btn-icon-content__text { color: #f6f2e9; }
+
+/* SVG files used as <img> (dark Gari ink): flip them to moonlight. */
+html.dfs-night .reviews_label { filter: invert(1) hue-rotate(180deg) brightness(1.12); }
+
+/* Course overview: by day light paper cards on a dark photo. At night the
+   backdrop goes deeper and the cards lift to a lighter, moonlit navy with a
+   hairline edge, so they still float. Card flap (inline SVG) matches. */
+html.dfs-night .course-overview_background {
+  background-image: linear-gradient(rgba(4, 8, 18, .45), rgba(4, 8, 18, .45)), var(--dfs-night-overview);
+}
+html.dfs-night .course-item_bottom { background-color: #18233c; box-shadow: inset 0 0 0 1px #26324f; }
+html.dfs-night .course-item_flap svg [fill="#F1EDE2" i] { fill: #18233c; }
+html.dfs-night .course_item:hover .course-item_bottom { background-color: #1d2a47; }
+
+/* The faint marquee words stay quiet, like by day, but just readable. */
+html.dfs-night .cta_pop_texts { color: #3e4b6b; }
+
+/* Photos: a touch dimmer so they don't glare out of the dark page. */
+html.dfs-night .parallax-img,
+html.dfs-night .instructor_image,
+html.dfs-night .testimonial_profile-image,
+html.dfs-night .reviews_avatar { filter: brightness(.88) saturate(.92); }
+/* The chapter illustrations are light paper prints. A moonlight-blue
+   multiply layer turns the paper night blue while the dark ink lines stay
+   crisp, like a print on the wall in a dark room. */
+html.dfs-night .parallax-img { filter: saturate(.85); }
+html.dfs-night .parallax-bg::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: #5f719c; mix-blend-mode: multiply;
+}
+
+/* ---------- The toggle button (sits in the nav, before Login) ---------- */
+.dfs-night-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 4rem; height: 4rem; padding: 0; margin: 0;
+  background: transparent; border: 0;
+  border-left: 1px solid var(--brand-colors--dark-bage);
+  color: var(--brand-colors--dark_gray);
+  cursor: pointer; position: relative;
+}
+.dfs-night-toggle:focus-visible { outline: 1px solid var(--brand-colors--blue); outline-offset: -4px; }
+.dfs-night-toggle svg { width: 18px; height: 18px; shape-rendering: crispEdges; display: block; }
+.dfs-night-toggle .dfs-sun { display: none; }
+html.dfs-night .dfs-night-toggle .dfs-sun { display: block; }
+html.dfs-night .dfs-night-toggle .dfs-moon { display: none; }
+
+/* ---------- The shift itself ---------- */
+/* Modern browsers: night falls from the top like dusk, day rises from the
+   bottom like dawn. A soft, feathered edge, ~1.4 s. */
+::view-transition-old(root) { animation: none; }
+::view-transition-new(root) {
+  animation: dfs-sky 1.4s cubic-bezier(.45, 0, .25, 1) both;
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 60%);
+          mask-image: linear-gradient(to bottom, #000 40%, transparent 60%);
+  -webkit-mask-size: 100% 250%; mask-size: 100% 250%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+html.dfs-dawn::view-transition-new(root) {
+  -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 60%);
+          mask-image: linear-gradient(to top, #000 40%, transparent 60%);
+  animation-name: dfs-sky-up;
+}
+@keyframes dfs-sky    { from { -webkit-mask-position: 0 100%; mask-position: 0 100%; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
+@keyframes dfs-sky-up { from { -webkit-mask-position: 0 0; mask-position: 0 0; } to { -webkit-mask-position: 0 100%; mask-position: 0 100%; } }
+
+/* Older browsers: a slow colour fade instead. */
+html.dfs-shifting, html.dfs-shifting *, html.dfs-shifting *::before, html.dfs-shifting *::after {
+  transition: background-color 1.2s ease, color 1.2s ease, border-color 1.2s ease,
+              fill 1.2s ease, stroke 1.2s ease, filter 1.2s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root), ::view-transition-old(root) { animation: none !important; }
+  html.dfs-shifting, html.dfs-shifting * { transition: none !important; }
+}
+
+/* Phones: a slimmer toggle so the logo keeps its room. */
+@media (max-width: 479px) {
+  .dfs-night-toggle { width: 3rem; }
+  .dfs-night-toggle svg { width: 16px; height: 16px; }
+}
+
+/* ---------- Tweaks after the staging review (Rimbo, 7 Oct) ----------
+   (Kept here so they survive regenerating night.css.) */
+
+/* Announcement bar: one colour at night, the timer included (was blue + two greys). */
+html.dfs-night .is-announce,
+html.dfs-night .announcement_text,
+html.dfs-night .countdown_component.is-announcement,
+html.dfs-night .countdown_component.is-announcement .countdown_unit,
+html.dfs-night .countdown_component.is-announcement .countdown_number,
+html.dfs-night .countdown_component.is-announcement .countdown_label { color: var(--brand-colors--dark_gray); }
+
+/* Money-back guarantee: by day the dashed shapes are beige on beige (barely there).
+   At night they'd turn moonlight and pop, so keep them a quiet blue-grey. */
+html.dfs-night .money-back_component svg { color: #34415f; }
+html.dfs-night .money-back_star { opacity: .35; }
+
+/* Arrow blocks that are dark by day turn moonlight at night: give the arrow the
+   night ink, so it isn't white on light ("Learn more"). */
+html.dfs-night .btn-icon-icon__bg.is-dark ~ .btn-icon-icon__wrap { color: #0e1628; }
+
+/* Text on top of a photo ("You're The Product Of Your Systems") stays light, as by day:
+   it uses the page-beige variable, which turns navy at night. */
+html.dfs-night .mac_text.is-5 { color: #fbf7ee; }
+
+/* Instructor photo: the same moonlit blue as the chapter illustrations. */
+html.dfs-night .instructor_image { filter: brightness(.8) sepia(.3) hue-rotate(185deg) saturate(.9); }
+
+/* Login / sign-up backdrop: night version of the same mountains (recoloured, no AI). */
+html.dfs-night .sing_in_bg { background-image: url(large_BG3-night.webp); }
+
+/* Blue buttons and picked answers keep light text at night, like by day. */
+html.dfs-night .form-submit-btn,
+html.dfs-night .radiocheck-field.is-boxed:has(input:checked) .radiocheck-label.is-boxed { color: #f6f2e9; }
+
+/* Fields the browser filled in (email): by day a light-blue highlight, painted with an
+   inset shadow (which the generator skips). At night: the deep night highlight. */
+html.dfs-night input:-webkit-autofill,
+html.dfs-night input:-webkit-autofill:hover,
+html.dfs-night input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #11233d inset; }
+
+/* Onboarding / feedback overlay: its grid comes from a page embed (onboard_css) with a
+   fixed #F2F0E7, which the generator can't see. Give it the same faint night grid. */
+html.dfs-night .transition-panel,
+html.dfs-night .panel-cap-top,
+html.dfs-night .panel-cap-bottom {
+  background-image:
+    repeating-linear-gradient(to right, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem),
+    repeating-linear-gradient(to bottom, rgba(242,238,229,0.045) 0, rgba(242,238,229,0.045) 1px, transparent 1px, transparent 2rem);
+}
+
+/* Dashboard course covers: the mountain print gets the same moonlit tint as the chapter
+   illustrations, with everything on it in white (title, logo and course label). */
+html.dfs-night .cover_course-card::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: #5f719c; mix-blend-mode: multiply;
+}
+html.dfs-night .cover_course-card .course_title,
+html.dfs-night .cover_course-card .logo_icon { color: #f2eee5; }
+html.dfs-night .cover_course-card .logo_icon svg [fill="#3D3A35" i] { fill: #f2eee5; }
+html.dfs-night .cover_course-card .course_tag,
+html.dfs-night .cover_course-card .course_tag.orange { color: #f2eee5; }
+
+/* Card corner arrow: highlight blue with a dark arrow (hover turns it dark blue, see the
+   dashboard script). Courses that aren't open yet (combo class is-inactive, or a
+   "Coming soon" on the card) get the same quiet grey-blue as their button. */
+html.dfs-night .click_indicator_cr { background-color: #8fd3f5; border-color: #8fd3f5; }
+html.dfs-night .click_indicator_cr .cr_arrow { color: #0e1628; }
+html.dfs-night .click_indicator_cr.is-inactive,
+html.dfs-night .course_card:has(.coming_soon) .click_indicator_cr { background-color: #1d2944; border-color: #1d2944; }
+html.dfs-night .click_indicator_cr.is-inactive .cr_arrow,
+html.dfs-night .course_card:has(.coming_soon) .click_indicator_cr .cr_arrow { color: var(--brand-colors--ll-gray); }
+
+/* Dashboard "Go to course": the same highlight blue as the corner arrow, with dark text;
+   on hover the dark-blue fill slides in (as by day) and the text turns highlight blue.
+   Only this button for now, not the Enroll button in the same spot (is-full_split). */
+html.dfs-night .btn-icon-link.is-dashb .btn-icon-content.is-bleu_course:not(.is-full_split) {
+  background-color: #8fd3f5; border-color: #8fd3f5; color: #0e1628;
+}
+html.dfs-night .btn-icon-link.is-dashb .btn-icon-content.is-bleu_course:not(.is-full_split):hover { color: #8fd3f5; }
+
+/* Lesson navigation: by day Previous is light (outline) and Next is the dark one. At
+   night they'd swap; keep Next the stronger one with its own raised night blue. */
+html.dfs-night .cnb_option.is-dark { background-color: #25324f; color: #f2eee5; }
+html.dfs-night .cnb_option.is-dark:hover { background-color: #2e3d60; }
+
+/* "Coming soon": by day a dark-grey block. At night a quiet raised block with muted
+   text, so it reads as "not yet" instead of a bright light-grey button. */
+html.dfs-night .coming_soon { background-color: #1d2944; }
+html.dfs-night .coming_soon .text-color-white { color: var(--brand-colors--80-dark_gray); }
+
+/* A nav with a single button (login, course page): the toggle sits right against that
+   button on the right, instead of floating to the middle. */
+.dfs-night-toggle.is-pushed { margin-left: auto; }
+
+/* Pages without a nav: a small square button in the bottom-left corner, above the page
+   (but under the onboarding/feedback overlays). */
+.dfs-night-toggle.is-floating {
+  position: fixed; left: 1rem; bottom: 1rem; z-index: 9000;
+  width: 2.75rem; height: 2.75rem;
+  border: 1px solid var(--brand-colors--dark-bage); border-radius: .25rem;
+  background-color: var(--brand-colors--bage);
+}
+
+/* Phone: a narrower toggle in the nav, so the nav doesn't get squeezed. */
+@media screen and (max-width: 479px) { .dfs-night-toggle:not(.is-floating) { width: 3rem; } }

@@ -66,6 +66,9 @@ jobs:
         run: |
           git show "${{ steps.pick.outputs.target }}:main.js" > main.js
           git show "${{ steps.pick.outputs.target }}:styles.css" > styles.css
+          if git cat-file -e "${{ steps.pick.outputs.target }}:night" 2>/dev/null; then
+            git checkout "${{ steps.pick.outputs.target }}" -- night
+          fi
           npm run build
         env:
           DFS_VERSION: ${{ steps.pick.outputs.target }}
